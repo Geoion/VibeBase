@@ -7,7 +7,6 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { open } from "@tauri-apps/api/dialog";
 import { useConfigStore, WorkspaceConfig } from "../../stores/configStore";
 import EnvironmentSelector from "../environment/EnvironmentSelector";
-import SettingsPanel from "../settings/SettingsPanel";
 
 interface RecentProject {
   id: string;
@@ -25,7 +24,6 @@ export default function Header() {
   const [showThemeMenu, setShowThemeMenu] = useState(false);
   const [showLanguageMenu, setShowLanguageMenu] = useState(false);
   const [showWorkspaceMenu, setShowWorkspaceMenu] = useState(false);
-  const [showSettings, setShowSettings] = useState(false);
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
 
   useEffect(() => {
@@ -130,6 +128,14 @@ export default function Header() {
     }
   };
 
+  const openSettingsWindow = async () => {
+    try {
+      await invoke("open_settings_window");
+    } catch (error) {
+      console.error("Failed to open settings window:", error);
+    }
+  };
+
   return (
     <header className="h-12 border-b border-border flex items-center px-4 bg-card">
       <div className="flex items-center gap-4 flex-1">
@@ -212,7 +218,7 @@ export default function Header() {
 
         {/* Settings */}
         <button
-          onClick={() => setShowSettings(true)}
+          onClick={openSettingsWindow}
           className="p-2 hover:bg-accent rounded-md transition-colors"
           title="Settings"
         >
@@ -295,9 +301,6 @@ export default function Header() {
           )}
         </div>
       </div>
-
-      {/* Settings Modal */}
-      {showSettings && <SettingsPanel onClose={() => setShowSettings(false)} />}
     </header>
   );
 }
