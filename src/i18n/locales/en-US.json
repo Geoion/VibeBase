@@ -7,7 +7,8 @@
     "title": "Welcome to VibeBase",
     "subtitle": "VS Code + Postman for Prompt Engineering",
     "openWorkspace": "Open Workspace",
-    "description": "Select a folder to start managing your prompts"
+    "description": "Select a folder to start managing your prompts",
+    "recentProjects": "Recent Projects"
   },
   "menu": {
     "file": "File",
@@ -47,6 +48,7 @@
   "workspace": {
     "noWorkspace": "No workspace opened",
     "openFolder": "Open Folder",
+    "openNew": "Open New Project",
     "noPrompts": "No prompt files found",
     "promptsFound": "Found {{count}} prompts",
     "newPrompt": "New Prompt",

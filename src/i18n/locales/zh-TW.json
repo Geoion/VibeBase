@@ -7,7 +7,8 @@
     "title": "歡迎使用 VibeBase",
     "subtitle": "Prompt 領域的 VS Code + Postman",
     "openWorkspace": "開啟工作區",
-    "description": "選擇一個資料夾開始管理你的 Prompt"
+    "description": "選擇一個資料夾開始管理你的 Prompt",
+    "recentProjects": "最近的專案"
   },
   "menu": {
     "file": "檔案",
@@ -43,6 +44,7 @@
   "workspace": {
     "noWorkspace": "未開啟工作區",
     "openFolder": "開啟資料夾",
+    "openNew": "開啟新專案",
     "noPrompts": "未找到 Prompt 檔案",
     "promptsFound": "找到 {{count}} 個 Prompt",
     "newPrompt": "新建 Prompt",
