@@ -129,10 +129,13 @@ export default function Header() {
   };
 
   const openSettingsWindow = async () => {
+    console.log("Opening settings window...");
     try {
       await invoke("open_settings_window");
+      console.log("Settings window opened successfully");
     } catch (error) {
       console.error("Failed to open settings window:", error);
+      alert("Failed to open settings: " + error);
     }
   };
 
