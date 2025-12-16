@@ -145,5 +145,10 @@
     "cost": "Cost",
     "fill_variables_hint": "Fill in variables and click Run to execute",
     "click_run_hint": "Click Run button to execute Prompt"
+  },
+  "settings": {
+    "title": "Settings",
+    "llmProviders": "LLM Providers",
+    "apiKeys": "API Keys (Legacy)"
   }
 }

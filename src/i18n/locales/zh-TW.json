@@ -145,5 +145,10 @@
     "cost": "成本",
     "fill_variables_hint": "填寫變數後點擊執行按鈕執行",
     "click_run_hint": "點擊執行按鈕執行 Prompt"
+  },
+  "settings": {
+    "title": "設定",
+    "llmProviders": "LLM 提供商",
+    "apiKeys": "API 金鑰（舊版）"
   }
 }
