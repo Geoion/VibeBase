@@ -46,16 +46,19 @@ pub fn get_prompt_metadata(
     
     println!("[get_prompt_metadata] tags from db: {:?}", metadata.tags);
     
-    Ok(PromptMetadataResponse {
+    let response = PromptMetadataResponse {
         id: metadata.id,
         file_path: metadata.file_path,
         provider_ref: metadata.provider_ref,
         model_override: metadata.model_override,
         parameters: metadata.parameters,
-        tags: metadata.tags,
+        tags: metadata.tags.clone(),
         test_data_path: metadata.test_data_path,
         variables: metadata.variables,
-    })
+    };
+    
+    println!("[get_prompt_metadata] response.tags: {:?}", response.tags);
+    Ok(response)
 }
 
 /// Save metadata for a prompt file
