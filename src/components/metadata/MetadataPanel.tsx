@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
+import { useWorkspaceStore } from "../../stores/workspaceStore";
 
 interface PromptMetadata {
   id: string;
@@ -10,10 +11,8 @@ interface PromptMetadata {
   model_override?: string;
   parameters?: string;
   test_data_path?: string;
-  evaluation_config?: string;
   tags?: string;
   variables?: string;
-  validation_status?: string;
 }
 
 interface MetadataPanelProps {
@@ -22,6 +21,7 @@ interface MetadataPanelProps {
 
 export default function MetadataPanel({ filePath }: MetadataPanelProps) {
   const { t } = useTranslation();
+  const { workspace } = useWorkspaceStore();
   const [metadata, setMetadata] = useState<PromptMetadata | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -35,29 +35,177 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
   const [testDataPath, setTestDataPath] = useState("");
   const [tags, setTags] = useState<string[]>([]);
   const [newTag, setNewTag] = useState("");
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  // 存储待保存的数据快照
+  const pendingSaveDataRef = useRef<{
+    workspacePath: string;
+    filePath: string;
+    providerRef: string;
+    modelOverride: string;
+    temperature: string;
+    maxTokens: string;
+    tags: string[];
+    testDataPath: string;
+  } | null>(null);
+  // 使用 ref 来控制是否允许保存（同步更新，避免 React 状态延迟问题）
+  const canSaveRef = useRef<boolean>(false);
+  // 当前文件路径的 ref
+  const currentFilePathRef = useRef<string>(filePath);
 
+  // 组件挂载时和 filePath 变化时加载数据
   useEffect(() => {
-    loadMetadata();
-    loadProviders();
-  }, [filePath]);
+
+    // 立即禁止保存（同步）
+    canSaveRef.current = false;
+    currentFilePathRef.current = filePath;
+
+    // 立即清除之前的定时器
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+      saveTimeoutRef.current = null;
+    }
+
+    // 在切换文件前，先保存上一个文件的数据
+    const saveAndLoad = async () => {
+      // 如果有待保存的数据，且文件路径不同，先保存
+      const pendingData = pendingSaveDataRef.current;
+      if (pendingData && pendingData.filePath !== filePath) {
+        const parameters: Record<string, number> = {};
+        if (pendingData.temperature) parameters.temperature = parseFloat(pendingData.temperature);
+        if (pendingData.maxTokens) parameters.max_tokens = parseInt(pendingData.maxTokens);
+
+        const metadataUpdate = {
+          file_path: pendingData.filePath,
+          provider_ref: pendingData.providerRef || "default",
+          model_override: pendingData.modelOverride || null,
+          parameters: Object.keys(parameters).length > 0 ? JSON.stringify(parameters) : null,
+          tags: pendingData.tags.length > 0 ? JSON.stringify(pendingData.tags) : null,
+          test_data_path: pendingData.testDataPath || null,
+        };
+
+        console.log("Saving previous file on switch:", metadataUpdate);
+        try {
+          await invoke("save_prompt_metadata", {
+            workspacePath: pendingData.workspacePath,
+            metadata: metadataUpdate,
+          });
+        } catch (err) {
+          console.error("Failed to save on switch:", err);
+        }
+      }
+
+      // 清空 pending 数据
+      pendingSaveDataRef.current = null;
+
+      // 加载新文件
+      await loadMetadata();
+      loadProviders();
+    };
+
+    saveAndLoad();
+  }, [filePath, workspace?.path]);
+
+  // 自动保存 - 当表单数据变化时
+  useEffect(() => {
+    // 使用 ref 检查是否允许保存（同步检查）
+    if (!canSaveRef.current || !workspace?.path) return;
+
+    const savedFilePath = currentFilePathRef.current;
+
+    // 存储当前数据快照（用于切换文件时保存）
+    pendingSaveDataRef.current = {
+      workspacePath: workspace.path,
+      filePath: savedFilePath,
+      providerRef,
+      modelOverride,
+      temperature,
+      maxTokens,
+      tags,
+      testDataPath,
+    };
+
+    // 清除之前的定时器
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current);
+    }
+
+    // 延迟 500ms 后自动保存
+    saveTimeoutRef.current = setTimeout(async () => {
+      // 再次检查是否允许保存，以及文件是否匹配
+      if (!canSaveRef.current || currentFilePathRef.current !== savedFilePath) {
+        console.log("Skip auto-save: not allowed or file changed");
+        return;
+      }
+
+      try {
+        setSaving(true);
+
+        // Build parameters JSON
+        const parameters: Record<string, number> = {};
+        if (temperature) parameters.temperature = parseFloat(temperature);
+        if (maxTokens) parameters.max_tokens = parseInt(maxTokens);
+
+        const metadataUpdate = {
+          file_path: savedFilePath,
+          provider_ref: providerRef || "default",
+          model_override: modelOverride || null,
+          parameters: Object.keys(parameters).length > 0 ? JSON.stringify(parameters) : null,
+          tags: tags.length > 0 ? JSON.stringify(tags) : null,
+          test_data_path: testDataPath || null,
+        };
+
+        await invoke("save_prompt_metadata", {
+          workspacePath: workspace.path,
+          metadata: metadataUpdate,
+        });
+
+        console.log("Metadata auto-saved:", metadataUpdate);
+        // 保存成功后清空 pending
+        if (pendingSaveDataRef.current?.filePath === savedFilePath) {
+          pendingSaveDataRef.current = null;
+        }
+      } catch (error) {
+        console.error("Failed to auto-save metadata:", error);
+      } finally {
+        setSaving(false);
+      }
+    }, 500);
+
+    return () => {
+      if (saveTimeoutRef.current) {
+        clearTimeout(saveTimeoutRef.current);
+      }
+    };
+  }, [workspace?.path, providerRef, modelOverride, temperature, maxTokens, tags, testDataPath]);
 
   const loadMetadata = async () => {
+    if (!workspace?.path) return;
+
     try {
       setLoading(true);
-      // TODO: Implement get_prompt_metadata command
-      // const data = await invoke<PromptMetadata>("get_prompt_metadata", {
-      //   filePath: filePath,
-      // });
-      // setMetadata(data);
-      // populateForm(data);
-
-      // For now, use default values
-      setProviderRef("openai_prod");
-      setTags([]);
+      const data = await invoke<PromptMetadata>("get_prompt_metadata", {
+        workspacePath: workspace.path,
+        filePath: filePath,
+      });
+      setMetadata(data);
+      populateForm(data);
     } catch (error) {
       console.error("Failed to load metadata:", error);
+      // Use default values on error
+      setProviderRef("");
+      setTags([]);
+      setTemperature("0.7");
+      setMaxTokens("");
+      setModelOverride("");
+      setTestDataPath("");
     } finally {
       setLoading(false);
+      // 使用 setTimeout 确保 React 状态更新已完成，然后允许自动保存
+      setTimeout(() => {
+        if (currentFilePathRef.current === filePath) {
+          canSaveRef.current = true;
+        }
+      }, 100);
     }
   };
 
@@ -71,7 +219,7 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
   };
 
   const populateForm = (data: PromptMetadata) => {
-    setProviderRef(data.provider_ref);
+    setProviderRef(data.provider_ref || "");
     setModelOverride(data.model_override || "");
 
     // Parse parameters
@@ -82,7 +230,12 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
         setMaxTokens(params.max_tokens?.toString() || "");
       } catch (e) {
         console.error("Failed to parse parameters:", e);
+        setTemperature("0.7");
+        setMaxTokens("");
       }
+    } else {
+      setTemperature("0.7");
+      setMaxTokens("");
     }
 
     // Parse tags
@@ -93,6 +246,8 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
         console.error("Failed to parse tags:", e);
         setTags([]);
       }
+    } else {
+      setTags([]);
     }
 
     setTestDataPath(data.test_data_path || "");
@@ -117,37 +272,6 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
     }
   };
 
-  const handleSave = async () => {
-    try {
-      setSaving(true);
-
-      // Build parameters JSON
-      const parameters: any = {};
-      if (temperature) parameters.temperature = parseFloat(temperature);
-      if (maxTokens) parameters.max_tokens = parseInt(maxTokens);
-
-      const metadataUpdate = {
-        file_path: filePath,
-        provider_ref: providerRef,
-        model_override: modelOverride || null,
-        parameters: JSON.stringify(parameters),
-        tags: JSON.stringify(tags),
-        test_data_path: testDataPath || null,
-      };
-
-      // TODO: Implement save_prompt_metadata command
-      // await invoke("save_prompt_metadata", { metadata: metadataUpdate });
-
-      console.log("Metadata saved:", metadataUpdate);
-      alert(t("metadata.saved_successfully"));
-    } catch (error) {
-      console.error("Failed to save metadata:", error);
-      alert(t("metadata.save_failed") + ": " + error);
-    } finally {
-      setSaving(false);
-    }
-  };
-
   if (loading) {
     return (
       <div className="p-4">
@@ -158,13 +282,6 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
 
   return (
     <div className="flex flex-col h-full">
-      {/* Header */}
-      <div className="px-4 py-3 border-b border-border">
-        <h3 className="text-sm font-semibold text-foreground">
-          {t("metadata.title")}
-        </h3>
-      </div>
-
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
         {/* Tags */}
@@ -339,15 +456,13 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
         )}
       </div>
 
-      {/* Footer */}
-      <div className="p-4 border-t border-border">
-        <button
-          onClick={handleSave}
-          disabled={saving || !providerRef}
-          className="w-full px-4 py-2 text-sm font-medium text-white bg-primary rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {saving ? t("metadata.saving") : t("metadata.save")}
-        </button>
+      {/* Footer - Auto save status */}
+      <div className="px-4 py-2 border-t border-border">
+        <p className="text-xs text-muted-foreground text-center">
+          {saving
+            ? t("metadata.auto_saving", "自动保存中...")
+            : t("metadata.auto_saved", "自动保存")}
+        </p>
       </div>
     </div>
   );
