@@ -48,7 +48,10 @@
     "noPrompts": "未找到 Prompt 檔案",
     "promptsFound": "找到 {{count}} 個 Prompt",
     "newPrompt": "新建 Prompt",
-    "refresh": "重新整理"
+    "newFile": "新建檔案",
+    "newFolder": "新建資料夾",
+    "refresh": "重新整理",
+    "deleteConfirm": "確定要刪除 {{name}} 嗎？"
   },
   "editor": {
     "selectFile": "選擇檔案開始編輯",
@@ -58,7 +61,8 @@
   },
   "inspector": {
     "execution": "執行",
-    "metadata": "元資料"
+    "metadata": "元資料",
+    "history": "歷史"
   },
   "variables": {
     "manager": "全域變數",
@@ -124,7 +128,9 @@
     "save": "儲存元資料",
     "saving": "儲存中...",
     "saved_successfully": "元資料儲存成功！",
-    "save_failed": "儲存元資料失敗"
+    "save_failed": "儲存元資料失敗",
+    "auto_saving": "自動儲存中...",
+    "auto_saved": "自動儲存"
   },
   "execution": {
     "variables": "變數",
@@ -149,7 +155,39 @@
   "settings": {
     "title": "設定",
     "llmProviders": "LLM 提供商",
-    "apiKeys": "API 金鑰（舊版）"
+    "apiKeys": "API 金鑰（舊版）",
+    "general": {
+      "title": "常規設定",
+      "language": "語言",
+      "languageDesc": "選擇界面顯示語言",
+      "appearance": "外觀",
+      "appearanceDesc": "選擇界面主題",
+      "management": "設定管理",
+      "importSettings": "導入設定",
+      "importDesc": "從文件恢復設定",
+      "exportSettings": "導出設定",
+      "exportDesc": "導出設定到文件",
+      "resetSettings": "重置設定",
+      "resetDesc": "恢復所有設定到默認值"
+    }
+  },
+  "history": {
+    "title": "檔案歷史",
+    "loading": "載入歷史中...",
+    "no_history": "暫無歷史紀錄",
+    "no_history_desc": "編輯檔案後會自動儲存歷史",
+    "empty_content": "(空內容)",
+    "back": "返回",
+    "apply_version": "套用此版本",
+    "applying": "套用中...",
+    "apply_warning": "套用後將覆蓋目前檔案內容",
+    "apply_failed": "套用歷史版本失敗",
+    "just_now": "剛剛",
+    "minutes_ago": "{{count}} 分鐘前",
+    "hours_ago": "{{count}} 小時前",
+    "preview_title": "歷史版本",
+    "cancel_preview": "取消",
+    "previewing": "正在預覽"
   },
   "providers": {
     "title": "提供商",

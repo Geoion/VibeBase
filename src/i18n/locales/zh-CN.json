@@ -43,7 +43,8 @@
   },
   "inspector": {
     "execution": "执行",
-    "metadata": "元数据"
+    "metadata": "元数据",
+    "history": "历史"
   },
   "workspace": {
     "noWorkspace": "未打开工作区",
@@ -52,7 +53,10 @@
     "noPrompts": "未找到 Prompt 文件",
     "promptsFound": "找到 {{count}} 个 Prompt",
     "newPrompt": "新建 Prompt",
-    "refresh": "刷新"
+    "newFile": "新建文件",
+    "newFolder": "新建文件夹",
+    "refresh": "刷新",
+    "deleteConfirm": "确定要删除 {{name}} 吗？"
   },
   "editor": {
     "selectFile": "选择文件开始编辑",
@@ -124,7 +128,9 @@
     "save": "保存元数据",
     "saving": "保存中...",
     "saved_successfully": "元数据保存成功！",
-    "save_failed": "保存元数据失败"
+    "save_failed": "保存元数据失败",
+    "auto_saving": "自动保存中...",
+    "auto_saved": "自动保存"
   },
   "execution": {
     "variables": "变量",
@@ -149,7 +155,39 @@
   "settings": {
     "title": "设置",
     "llmProviders": "LLM 提供商",
-    "apiKeys": "API 密钥（旧版）"
+    "apiKeys": "API 密钥（旧版）",
+    "general": {
+      "title": "常规设置",
+      "language": "语言",
+      "languageDesc": "选择界面显示语言",
+      "appearance": "外观",
+      "appearanceDesc": "选择界面主题",
+      "management": "设置管理",
+      "importSettings": "导入设置",
+      "importDesc": "从文件恢复设置",
+      "exportSettings": "导出设置",
+      "exportDesc": "导出设置到文件",
+      "resetSettings": "重置设置",
+      "resetDesc": "恢复所有设置到默认值"
+    }
+  },
+  "history": {
+    "title": "文件历史",
+    "loading": "加载历史中...",
+    "no_history": "暂无历史记录",
+    "no_history_desc": "编辑文件后会自动保存历史",
+    "empty_content": "(空内容)",
+    "back": "返回",
+    "apply_version": "应用此版本",
+    "applying": "应用中...",
+    "apply_warning": "应用后将覆盖当前文件内容",
+    "apply_failed": "应用历史版本失败",
+    "just_now": "刚刚",
+    "minutes_ago": "{{count}} 分钟前",
+    "hours_ago": "{{count}} 小时前",
+    "preview_title": "历史版本",
+    "cancel_preview": "取消",
+    "previewing": "正在预览"
   },
   "providers": {
     "title": "提供商",
@@ -177,6 +215,7 @@
     "resetSettings": "重置设置",
     "resetConfirm": "确定要重置所有提供商设置吗？",
     "deleteModelConfirm": "确定要删除此模型吗？",
+    "deleteConfirm": "确定要删除此提供商配置吗？",
     "save": "保存",
     "saved": "设置保存成功",
     "saveFailed": "保存失败"

@@ -43,7 +43,8 @@
   },
   "inspector": {
     "execution": "Execution",
-    "metadata": "Metadata"
+    "metadata": "Metadata",
+    "history": "History"
   },
   "workspace": {
     "noWorkspace": "No workspace opened",
@@ -52,7 +53,10 @@
     "noPrompts": "No prompt files found",
     "promptsFound": "Found {{count}} prompts",
     "newPrompt": "New Prompt",
-    "refresh": "Refresh"
+    "newFile": "New File",
+    "newFolder": "New Folder",
+    "refresh": "Refresh",
+    "deleteConfirm": "Are you sure you want to delete {{name}}?"
   },
   "editor": {
     "selectFile": "Select a file to start editing",
@@ -124,7 +128,9 @@
     "save": "Save Metadata",
     "saving": "Saving...",
     "saved_successfully": "Metadata saved successfully!",
-    "save_failed": "Failed to save metadata"
+    "save_failed": "Failed to save metadata",
+    "auto_saving": "Auto saving...",
+    "auto_saved": "Auto saved"
   },
   "execution": {
     "variables": "Variables",
@@ -149,7 +155,39 @@
   "settings": {
     "title": "Settings",
     "llmProviders": "LLM Providers",
-    "apiKeys": "API Keys (Legacy)"
+    "apiKeys": "API Keys (Legacy)",
+    "general": {
+      "title": "General Settings",
+      "language": "Language",
+      "languageDesc": "Select interface display language",
+      "appearance": "Appearance",
+      "appearanceDesc": "Select interface theme",
+      "management": "Settings Management",
+      "importSettings": "Import Settings",
+      "importDesc": "Restore settings from file",
+      "exportSettings": "Export Settings",
+      "exportDesc": "Export settings to file",
+      "resetSettings": "Reset Settings",
+      "resetDesc": "Restore all settings to default values"
+    }
+  },
+  "history": {
+    "title": "File History",
+    "loading": "Loading history...",
+    "no_history": "No history yet",
+    "no_history_desc": "History will be saved automatically when you edit files",
+    "empty_content": "(empty content)",
+    "back": "Back",
+    "apply_version": "Apply this version",
+    "applying": "Applying...",
+    "apply_warning": "This will overwrite the current file content",
+    "apply_failed": "Failed to apply history version",
+    "just_now": "Just now",
+    "minutes_ago": "{{count}} minutes ago",
+    "hours_ago": "{{count}} hours ago",
+    "preview_title": "History Version",
+    "cancel_preview": "Cancel",
+    "previewing": "Previewing"
   },
   "providers": {
     "title": "Providers",
