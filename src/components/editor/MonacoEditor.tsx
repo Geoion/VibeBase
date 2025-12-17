@@ -216,7 +216,7 @@ export default function MonacoEditor({
       <style>{`
         .variable-highlight {
           background-color: ${theme === "dark" ? "rgba(167, 139, 250, 0.2)" : "rgba(139, 92, 246, 0.15)"
-        };
+          };
           border-radius: 3px;
           font-weight: 600;
           color: ${theme === "dark" ? "#a78bfa" : "#8b5cf6"};
