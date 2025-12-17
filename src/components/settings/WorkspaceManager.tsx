@@ -48,6 +48,8 @@ function DeleteConfirmDialog({
 }: DeleteConfirmDialogProps) {
   if (!isOpen) return null;
 
+  const { t } = useTranslation();
+
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
       <div className="w-[480px] bg-card border border-border rounded-lg shadow-xl p-6">
@@ -56,25 +58,25 @@ function DeleteConfirmDialog({
             <AlertCircle className="w-6 h-6 text-destructive" />
           </div>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold mb-2">清空数据库记录</h3>
+            <h3 className="text-lg font-semibold mb-2">{t("workspaceManager.deleteConfirm.title")}</h3>
             <p className="text-sm text-muted-foreground mb-4">
-              确认要清空 <span className="font-medium text-foreground">{workspaceName}</span> 的所有数据库记录吗？
+              {t("workspaceManager.deleteConfirm.message", { name: workspaceName })}
             </p>
             <p className="text-sm text-destructive mb-4">
-              此操作将删除所有 Prompt 元数据、执行历史、文件历史等数据，且无法恢复！
+              {t("workspaceManager.deleteConfirm.warning")}
             </p>
             <div className="flex gap-3 justify-end">
               <button
                 onClick={onCancel}
                 className="px-4 py-2 rounded-lg border border-border hover:bg-accent transition-colors"
               >
-                取消
+                {t("actions.cancel")}
               </button>
               <button
                 onClick={onConfirm}
                 className="px-4 py-2 rounded-lg bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors"
               >
-                确认清空
+                {t("workspaceManager.deleteConfirm.confirm")}
               </button>
             </div>
           </div>
@@ -85,7 +87,7 @@ function DeleteConfirmDialog({
 }
 
 export default function WorkspaceManager() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [recentProjects, setRecentProjects] = useState<RecentProject[]>([]);
   const [workspaceStats, setWorkspaceStats] = useState<Map<string, WorkspaceStats>>(new Map());
   const [loading, setLoading] = useState(true);
@@ -130,7 +132,7 @@ export default function WorkspaceManager() {
       });
       setWorkspaceStats((prev) => new Map(prev).set(workspacePath, stats));
     } catch (error: any) {
-      alert(`初始化失败: ${error}`);
+      alert(`${t("workspaceManager.initializeFailed")}: ${error}`);
     }
   };
 
@@ -156,7 +158,7 @@ export default function WorkspaceManager() {
       setDeleteConfirmOpen(false);
       setSelectedWorkspace(null);
     } catch (error: any) {
-      alert(`清空失败: ${error}`);
+      alert(`${t("workspaceManager.clearFailed")}: ${error}`);
     }
   };
 
@@ -175,7 +177,8 @@ export default function WorkspaceManager() {
 
   const formatDate = (timestamp: number): string => {
     const date = new Date(timestamp * 1000);
-    return date.toLocaleDateString("zh-CN", {
+    const locale = i18n.language === "zh-CN" ? "zh-CN" : i18n.language === "zh-TW" ? "zh-TW" : "en-US";
+    return date.toLocaleDateString(locale, {
       year: "numeric",
       month: "2-digit",
       day: "2-digit",
@@ -189,7 +192,7 @@ export default function WorkspaceManager() {
       <div className="flex items-center justify-center h-full">
         <div className="flex items-center gap-3 text-muted-foreground">
           <RefreshCw className="w-5 h-5 animate-spin" />
-          <span>加载工作区...</span>
+          <span>{t("workspaceManager.loading")}</span>
         </div>
       </div>
     );
@@ -200,9 +203,9 @@ export default function WorkspaceManager() {
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
           <FolderOpen className="w-16 h-16 mx-auto mb-4 text-muted-foreground opacity-50" />
-          <p className="text-lg font-medium mb-2">暂无工作区</p>
+          <p className="text-lg font-medium mb-2">{t("workspaceManager.noWorkspaces")}</p>
           <p className="text-sm text-muted-foreground">
-            打开一个工作区后，这里将显示工作区信息
+            {t("workspaceManager.noWorkspacesDesc")}
           </p>
         </div>
       </div>
@@ -212,9 +215,9 @@ export default function WorkspaceManager() {
   return (
     <div className="p-8 max-w-7xl mx-auto">
       <div className="mb-6">
-        <h3 className="text-xl font-semibold mb-2">工作区管理</h3>
+        <h3 className="text-xl font-semibold mb-2">{t("workspaceManager.title")}</h3>
         <p className="text-sm text-muted-foreground">
-          查看和管理最近打开的工作区数据库
+          {t("workspaceManager.description")}
         </p>
       </div>
 
@@ -238,7 +241,7 @@ export default function WorkspaceManager() {
                       {project.path}
                     </p>
                     <p className="text-xs text-muted-foreground mt-1">
-                      最近打开: {formatDate(project.last_opened)}
+                      {t("workspaceManager.lastOpened")}: {formatDate(project.last_opened)}
                     </p>
                   </div>
                 </div>
@@ -248,19 +251,19 @@ export default function WorkspaceManager() {
                     <button
                       onClick={() => handleClearClick(project.path, project.name)}
                       className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg border border-destructive/20 text-destructive hover:bg-destructive/10 transition-colors"
-                      title="清空数据库记录"
+                      title={t("workspaceManager.clearRecords")}
                     >
                       <Trash2 className="w-4 h-4" />
-                      <span>清空记录</span>
+                      <span>{t("workspaceManager.clearRecords")}</span>
                     </button>
                   ) : (
                     <button
                       onClick={() => handleInitialize(project.path)}
                       className="flex items-center gap-2 px-3 py-2 text-sm rounded-lg bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
-                      title="初始化数据库"
+                      title={t("workspaceManager.initializeDb")}
                     >
                       <Plus className="w-4 h-4" />
-                      <span>初始化数据库</span>
+                      <span>{t("workspaceManager.initializeDb")}</span>
                     </button>
                   )}
                 </div>
@@ -272,7 +275,7 @@ export default function WorkspaceManager() {
                     <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
                       <FileText className="w-5 h-5 text-blue-500" />
                       <div>
-                        <div className="text-xs text-muted-foreground">Prompts</div>
+                        <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.prompts")}</div>
                         <div className="text-lg font-semibold">{stats.prompt_count}</div>
                       </div>
                     </div>
@@ -280,7 +283,7 @@ export default function WorkspaceManager() {
                     <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
                       <Tag className="w-5 h-5 text-green-500" />
                       <div>
-                        <div className="text-xs text-muted-foreground">标签</div>
+                        <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.tags")}</div>
                         <div className="text-lg font-semibold">{stats.tag_count}</div>
                       </div>
                     </div>
@@ -288,7 +291,7 @@ export default function WorkspaceManager() {
                     <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
                       <Database className="w-5 h-5 text-purple-500" />
                       <div>
-                        <div className="text-xs text-muted-foreground">数据库大小</div>
+                        <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.dbSize")}</div>
                         <div className="text-lg font-semibold">
                           {formatBytes(stats.db_size_bytes)}
                         </div>
@@ -298,7 +301,7 @@ export default function WorkspaceManager() {
                     <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
                       <History className="w-5 h-5 text-orange-500" />
                       <div>
-                        <div className="text-xs text-muted-foreground">历史版本</div>
+                        <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.history")}</div>
                         <div className="text-lg font-semibold">{stats.history_count}</div>
                       </div>
                     </div>
@@ -306,7 +309,7 @@ export default function WorkspaceManager() {
                     <div className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
                       <Zap className="w-5 h-5 text-yellow-500" />
                       <div>
-                        <div className="text-xs text-muted-foreground">执行记录</div>
+                        <div className="text-xs text-muted-foreground">{t("workspaceManager.stats.executions")}</div>
                         <div className="text-lg font-semibold">{stats.execution_count}</div>
                       </div>
                     </div>
@@ -315,14 +318,14 @@ export default function WorkspaceManager() {
                   <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg border border-dashed border-border">
                     <AlertCircle className="w-5 h-5 text-muted-foreground" />
                     <div className="text-sm text-muted-foreground">
-                      此工作区尚未初始化数据库，点击"初始化数据库"按钮开始使用
+                      {t("workspaceManager.notInitialized")}
                     </div>
                   </div>
                 )
               ) : (
                 <div className="flex items-center gap-3 p-4 bg-muted/50 rounded-lg">
                   <RefreshCw className="w-4 h-4 animate-spin text-muted-foreground" />
-                  <div className="text-sm text-muted-foreground">加载统计信息...</div>
+                  <div className="text-sm text-muted-foreground">{t("workspaceManager.loadingStats")}</div>
                 </div>
               )}
             </div>
