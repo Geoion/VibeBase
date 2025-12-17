@@ -88,7 +88,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
       if (isStandaloneWindow) {
         await handleClose();
       } else {
-      onClose();
+        onClose();
       }
     } catch (error) {
       console.error("Failed to save variables:", error);
@@ -164,7 +164,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
             data-tauri-drag-region={isStandaloneWindow}
           >
             {t("variables.manager")}
-              </h2>
+          </h2>
           {!isStandaloneWindow && (
             <button
               onClick={handleClose}
@@ -228,11 +228,10 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
                   return (
                     <div
                       key={variable.id}
-                      className={`grid grid-cols-[1fr_1fr_40px] gap-3 px-3 py-2 rounded transition-colors group ${
-                        matchIndices 
-                          ? "bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30" 
+                      className={`grid grid-cols-[1fr_1fr_40px] gap-3 px-3 py-2 rounded transition-colors group ${matchIndices
+                          ? "bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30"
                           : "hover:bg-accent/50"
-                      }`}
+                        }`}
                     >
                       <div className="relative">
                         {/* 背景高亮层 - 仅显示匹配的部分 */}
@@ -254,24 +253,25 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
                           placeholder="variable_name"
                         />
                       </div>
-                    <input
-                      type="text"
-                      value={variable.value}
-                      onChange={(e) =>
-                        handleUpdateVariable(variable.id, "value", e.target.value)
-                      }
-                      className="w-full px-2 py-1.5 text-sm bg-background border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring"
-                      placeholder={t("variables.defaultValue")}
-                    />
-                    <button
-                      onClick={() => handleDeleteVariable(variable.id)}
-                      className="p-1.5 hover:bg-destructive/10 rounded transition-colors opacity-0 group-hover:opacity-100"
-                      title={t("actions.delete", "Delete")}
-                    >
-                      <Trash2 className="w-4 h-4 text-destructive" />
-                    </button>
-                  </div>
-                ))}
+                      <input
+                        type="text"
+                        value={variable.value}
+                        onChange={(e) =>
+                          handleUpdateVariable(variable.id, "value", e.target.value)
+                        }
+                        className="w-full px-2 py-1.5 text-sm bg-background border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring"
+                        placeholder={t("variables.defaultValue")}
+                      />
+                      <button
+                        onClick={() => handleDeleteVariable(variable.id)}
+                        className="p-1.5 hover:bg-destructive/10 rounded transition-colors opacity-0 group-hover:opacity-100"
+                        title={t("actions.delete", "Delete")}
+                      >
+                        <Trash2 className="w-4 h-4 text-destructive" />
+                      </button>
+                    </div>
+                  );
+                })}
 
                 {variables.length === 0 && (
                   <div className="text-center py-20">
@@ -313,13 +313,13 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
         {/* Footer */}
         <div className="h-16 border-t border-border flex items-center justify-between px-6 bg-card/50">
           <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-2 h-2 rounded-full bg-green-500"></div>
-            <span className="text-xs text-muted-foreground">
-                {searchQuery 
-                  ? `${filteredVariables.length} / ${variables.length} variable(s)` 
+            <div className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-green-500"></div>
+              <span className="text-xs text-muted-foreground">
+                {searchQuery
+                  ? `${filteredVariables.length} / ${variables.length} variable(s)`
                   : `${variables.length} variable(s)`} • {t("variables.stored")} ~/.vibebase/app.db
-            </span>
+              </span>
             </div>
             <button
               onClick={() => setShowHelp(true)}
