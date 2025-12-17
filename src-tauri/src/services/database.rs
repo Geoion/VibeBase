@@ -249,19 +249,9 @@ impl ProjectDatabase {
         tags: Option<&str>,
         test_data_path: Option<&str>,
     ) -> Result<()> {
-        // 先查询当前的 tags 值
-        let current_tags: Option<String> = self.conn.query_row(
-            "SELECT tags FROM prompt_files WHERE file_path = ?1",
-            params![file_path],
-            |row| row.get(0),
-        ).ok().flatten();
-        println!("[update_prompt_metadata] file_path: {}", file_path);
-        println!("[update_prompt_metadata] current tags in db: {:?}", current_tags);
-        println!("[update_prompt_metadata] new tags to save: {:?}", tags);
-        
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
         
-        let rows_affected = self.conn.execute(
+        self.conn.execute(
             "UPDATE prompt_files SET
                 provider_ref = ?2,
                 model_override = ?3,
@@ -280,16 +270,6 @@ impl ProjectDatabase {
                 now,
             ],
         )?;
-        
-        println!("[update_prompt_metadata] rows affected: {}", rows_affected);
-        
-        // 验证更新后的值
-        let updated_tags: Option<String> = self.conn.query_row(
-            "SELECT tags FROM prompt_files WHERE file_path = ?1",
-            params![file_path],
-            |row| row.get(0),
-        ).ok().flatten();
-        println!("[update_prompt_metadata] tags after update: {:?}", updated_tags);
         
         Ok(())
     }
@@ -339,8 +319,7 @@ impl ProjectDatabase {
     }
 
     pub fn get_prompt_metadata(&self, file_path: &str) -> Result<PromptFileMetadata> {
-        println!("[get_prompt_metadata DB] reading file_path: {}", file_path);
-        let result = self.conn.query_row(
+        self.conn.query_row(
             "SELECT id, file_path, name, description, schema_version,
                     provider_ref, model_override, parameters,
                     test_data_path, evaluation_config,
@@ -350,8 +329,6 @@ impl ProjectDatabase {
              FROM prompt_files WHERE file_path = ?1",
             params![file_path],
             |row| {
-                let tags: Option<String> = row.get(10)?;
-                println!("[get_prompt_metadata DB] tags from row: {:?}", tags);
                 Ok(PromptFileMetadata {
                     id: row.get(0)?,
                     file_path: row.get(1)?,
@@ -363,7 +340,7 @@ impl ProjectDatabase {
                     parameters: row.get(7)?,
                     test_data_path: row.get(8)?,
                     evaluation_config: row.get(9)?,
-                    tags,
+                    tags: row.get(10)?,
                     variables: row.get(11)?,
                     file_hash: row.get(12)?,
                     file_size: row.get(13)?,
@@ -373,9 +350,7 @@ impl ProjectDatabase {
                     validation_errors: row.get(17)?,
                 })
             },
-        );
-        println!("[get_prompt_metadata DB] result tags: {:?}", result.as_ref().ok().map(|m| &m.tags));
-        result
+        )
     }
 
     pub fn list_prompt_files(&self) -> Result<Vec<PromptFileMetadata>> {
