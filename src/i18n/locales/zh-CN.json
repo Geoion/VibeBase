@@ -23,7 +23,8 @@
     "cancel": "取消",
     "close": "关闭",
     "use": "使用",
-    "delete": "删除"
+    "delete": "删除",
+    "clearSearch": "清除搜索"
   },
   "layout": {
     "navigator": "导航器",
@@ -78,6 +79,8 @@
     "stored": "已存储在",
     "saveVariables": "保存变量",
     "saving": "保存中...",
+    "searchPlaceholder": "搜索变量名...",
+    "noResults": "没有找到匹配的变量",
     "help": "帮助",
     "helpTitle": "如何使用全局变量",
     "helpWhatTitle": "什么是全局变量？",

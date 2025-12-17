@@ -23,7 +23,8 @@
     "cancel": "Cancel",
     "close": "Close",
     "use": "Use",
-    "delete": "Delete"
+    "delete": "Delete",
+    "clearSearch": "Clear Search"
   },
   "layout": {
     "navigator": "Navigator",
@@ -78,6 +79,8 @@
     "stored": "Stored in",
     "saveVariables": "Save Variables",
     "saving": "Saving...",
+    "searchPlaceholder": "Search variables...",
+    "noResults": "No matching variables found",
     "help": "Help",
     "helpTitle": "How to Use Global Variables",
     "helpWhatTitle": "What are Global Variables?",

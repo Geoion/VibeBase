@@ -23,7 +23,8 @@
     "cancel": "取消",
     "close": "關閉",
     "use": "使用",
-    "delete": "刪除"
+    "delete": "刪除",
+    "clearSearch": "清除搜尋"
   },
   "layout": {
     "navigator": "導航器",
@@ -78,6 +79,8 @@
     "stored": "已儲存於",
     "saveVariables": "儲存變數",
     "saving": "儲存中...",
+    "searchPlaceholder": "搜尋變數名稱...",
+    "noResults": "沒有找到符合的變數",
     "help": "說明",
     "helpTitle": "如何使用全域變數",
     "helpWhatTitle": "什麼是全域變數？",
