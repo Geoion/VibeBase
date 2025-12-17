@@ -1,9 +1,10 @@
 import { useState } from "react";
-import { X } from "lucide-react";
-import { Settings, Package, MessageSquare, FileText, Database, Plug, FolderOpen, Mic, Palette, Globe, Keyboard, Info } from "lucide-react";
+import { X, Moon, Sun, Languages, Download, Upload, RotateCcw, Monitor } from "lucide-react";
+import { Settings, Package, Plug, FolderOpen, Keyboard, Info } from "lucide-react";
 import LLMProviderManager from "./LLMProviderManager";
 import { appWindow } from "@tauri-apps/api/window";
 import { useTranslation } from "react-i18next";
+import { useThemeStore } from "../../stores/themeStore";
 
 interface SettingsPanelProps {
   onClose: () => void;
@@ -13,20 +14,15 @@ interface SettingsPanelProps {
 type SettingsTab =
   | "general"
   | "providers"
-  | "chat"
-  | "prompts"
-  | "memory"
   | "mcpservers"
   | "workspace"
-  | "speech"
-  | "userinterface"
-  | "network"
   | "keybindings"
   | "about";
 
 export default function SettingsPanel({ onClose, isStandaloneWindow = false }: SettingsPanelProps) {
-  const { t } = useTranslation();
-  const [activeTab, setActiveTab] = useState<SettingsTab>("providers");
+  const { t, i18n } = useTranslation();
+  const { theme, setTheme } = useThemeStore();
+  const [activeTab, setActiveTab] = useState<SettingsTab>("general");
 
   const handleMinimize = async () => {
     try {
@@ -66,17 +62,22 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
     }
   };
 
+  const handleLanguageChange = (lang: string) => {
+    i18n.changeLanguage(lang);
+    localStorage.setItem("language", lang);
+    // Sync to other windows
+    window.dispatchEvent(new StorageEvent("storage", { key: "language", newValue: lang }));
+  };
+
+  const handleThemeChange = (newTheme: "light" | "dark" | "system") => {
+    setTheme(newTheme);
+  };
+
   const menuItems: { id: SettingsTab; label: string; icon: any }[] = [
     { id: "general", label: "General", icon: Settings },
     { id: "providers", label: "Providers", icon: Package },
-    { id: "chat", label: "Chat", icon: MessageSquare },
-    { id: "prompts", label: "Prompts", icon: FileText },
-    { id: "memory", label: "Memory", icon: Database },
     { id: "mcpservers", label: "MCP Servers", icon: Plug },
     { id: "workspace", label: "Workspace", icon: FolderOpen },
-    { id: "speech", label: "Speech", icon: Mic },
-    { id: "userinterface", label: "User Interface", icon: Palette },
-    { id: "network", label: "Network", icon: Globe },
     { id: "keybindings", label: "Keybindings", icon: Keyboard },
     { id: "about", label: "About", icon: Info },
   ];
@@ -138,8 +139,8 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
                     key={item.id}
                     onClick={() => setActiveTab(item.id)}
                     className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors ${activeTab === item.id
-                        ? "bg-primary/10 text-primary font-medium"
-                        : "text-muted-foreground hover:bg-accent"
+                      ? "bg-primary/10 text-primary font-medium"
+                      : "text-muted-foreground hover:bg-accent"
                       }`}
                   >
                     <Icon className="w-4 h-4 flex-shrink-0" />
@@ -148,36 +149,101 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
                 );
               })}
             </div>
-
-            {/* Bottom Action Buttons */}
-            <div className="border-t border-border p-3 space-y-2">
-              <button
-                onClick={handleImportSettings}
-                className="w-full px-4 py-2.5 text-sm font-medium text-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
-              >
-                {t("providers.importSettings")}
-              </button>
-              <button
-                onClick={handleExportSettings}
-                className="w-full px-4 py-2.5 text-sm font-medium text-foreground bg-secondary rounded-lg hover:bg-secondary/80 transition-colors"
-              >
-                {t("providers.exportSettings")}
-              </button>
-              <button
-                onClick={handleResetSettings}
-                className="w-full px-4 py-2.5 text-sm font-medium text-destructive bg-transparent rounded-lg hover:bg-destructive/10 transition-colors"
-              >
-                {t("providers.resetSettings")}
-              </button>
-            </div>
           </div>
 
           {/* Main Content Area */}
-          <div className="flex-1 overflow-hidden">
+          <div className="flex-1 overflow-auto">
             {activeTab === "providers" && <LLMProviderManager />}
             {activeTab === "general" && (
-              <div className="flex items-center justify-center h-full">
-                <p className="text-muted-foreground">General settings coming soon...</p>
+              <div className="p-8 max-w-3xl mx-auto space-y-8">
+                <div>
+                  <h3 className="text-lg font-semibold mb-6">{t("settings.general.title")}</h3>
+
+                  {/* Language Setting */}
+                  <div className="space-y-6">
+                    <div className="flex items-start justify-between py-4 border-b border-border">
+                      <div className="flex items-start gap-3">
+                        <Languages className="w-5 h-5 mt-0.5 text-muted-foreground" />
+                        <div>
+                          <h4 className="font-medium">{t("settings.general.language")}</h4>
+                          <p className="text-sm text-muted-foreground mt-1">{t("settings.general.languageDesc")}</p>
+                        </div>
+                      </div>
+                      <select
+                        value={i18n.language}
+                        onChange={(e) => handleLanguageChange(e.target.value)}
+                        className="px-3 py-2 bg-secondary rounded-lg border border-border text-sm min-w-[160px]"
+                      >
+                        <option value="zh-CN">{t("language.zh-CN")}</option>
+                        <option value="zh-TW">{t("language.zh-TW")}</option>
+                        <option value="en-US">{t("language.en-US")}</option>
+                      </select>
+                    </div>
+
+                    {/* Theme Setting */}
+                    <div className="flex items-start justify-between py-4 border-b border-border">
+                      <div className="flex items-start gap-3">
+                        {theme === "dark" ? (
+                          <Moon className="w-5 h-5 mt-0.5 text-muted-foreground" />
+                        ) : theme === "light" ? (
+                          <Sun className="w-5 h-5 mt-0.5 text-muted-foreground" />
+                        ) : (
+                          <Monitor className="w-5 h-5 mt-0.5 text-muted-foreground" />
+                        )}
+                        <div>
+                          <h4 className="font-medium">{t("settings.general.appearance")}</h4>
+                          <p className="text-sm text-muted-foreground mt-1">{t("settings.general.appearanceDesc")}</p>
+                        </div>
+                      </div>
+                      <select
+                        value={theme}
+                        onChange={(e) => handleThemeChange(e.target.value as "light" | "dark" | "system")}
+                        className="px-3 py-2 bg-secondary rounded-lg border border-border text-sm min-w-[160px]"
+                      >
+                        <option value="light">{t("theme.light")}</option>
+                        <option value="dark">{t("theme.dark")}</option>
+                        <option value="system">{t("theme.system")}</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Actions Section */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-6">{t("settings.general.management")}</h3>
+                  <div className="space-y-3">
+                    <button
+                      onClick={handleImportSettings}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+                    >
+                      <Download className="w-5 h-5" />
+                      <div>
+                        <div className="font-medium">{t("settings.general.importSettings")}</div>
+                        <div className="text-sm text-muted-foreground">{t("settings.general.importDesc")}</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={handleExportSettings}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left bg-secondary hover:bg-secondary/80 rounded-lg transition-colors"
+                    >
+                      <Upload className="w-5 h-5" />
+                      <div>
+                        <div className="font-medium">{t("settings.general.exportSettings")}</div>
+                        <div className="text-sm text-muted-foreground">{t("settings.general.exportDesc")}</div>
+                      </div>
+                    </button>
+                    <button
+                      onClick={handleResetSettings}
+                      className="w-full flex items-center gap-3 px-4 py-3 text-left bg-transparent hover:bg-destructive/10 rounded-lg transition-colors border border-destructive/20"
+                    >
+                      <RotateCcw className="w-5 h-5 text-destructive" />
+                      <div>
+                        <div className="font-medium text-destructive">{t("settings.general.resetSettings")}</div>
+                        <div className="text-sm text-muted-foreground">{t("settings.general.resetDesc")}</div>
+                      </div>
+                    </button>
+                  </div>
+                </div>
               </div>
             )}
             {activeTab !== "providers" && activeTab !== "general" && (
@@ -191,6 +257,7 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
     </div>
   );
 }
+
 
 
 
