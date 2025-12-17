@@ -19,6 +19,7 @@ use commands::recent_projects::*;
 use commands::provider_models::*;
 use commands::history::*;
 use commands::metadata::*;
+use commands::update::*;
 
 fn main() {
     let app_state = AppState::new();
@@ -79,6 +80,11 @@ fn main() {
             apply_history,
             get_prompt_metadata,
             save_prompt_metadata,
+            get_workspace_stats,
+            initialize_workspace_db,
+            clear_workspace_db,
+            check_for_updates,
+            get_app_version,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
