@@ -4,6 +4,19 @@ use crate::services::database::ProjectDatabase;
 use std::fs;
 use std::path::Path;
 use uuid::Uuid;
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
+pub struct WorkspaceStats {
+    pub workspace_path: String,
+    pub workspace_name: String,
+    pub has_database: bool,
+    pub prompt_count: i32,
+    pub tag_count: i32,
+    pub db_size_bytes: i64,
+    pub history_count: i32,
+    pub execution_count: i32,
+}
 
 #[tauri::command]
 pub fn open_workspace(path: String) -> Result<Workspace, String> {
@@ -296,5 +309,151 @@ fn scan_directory(
         }
     }
 
+    Ok(())
+}
+
+#[tauri::command]
+pub fn get_workspace_stats(workspace_path: String) -> Result<WorkspaceStats, String> {
+    let path = Path::new(&workspace_path);
+    
+    if !path.exists() {
+        return Err("Workspace path does not exist".to_string());
+    }
+    
+    let workspace_name = path
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("Unknown")
+        .to_string();
+    
+    let db_path = path.join(".vibebase").join("project.db");
+    let has_database = db_path.exists();
+    
+    let mut stats = WorkspaceStats {
+        workspace_path: workspace_path.clone(),
+        workspace_name,
+        has_database,
+        prompt_count: 0,
+        tag_count: 0,
+        db_size_bytes: 0,
+        history_count: 0,
+        execution_count: 0,
+    };
+    
+    if !has_database {
+        return Ok(stats);
+    }
+    
+    // Get database file size
+    if let Ok(metadata) = fs::metadata(&db_path) {
+        stats.db_size_bytes = metadata.len() as i64;
+    }
+    
+    // Open database and get statistics
+    if let Ok(db) = ProjectDatabase::new(path) {
+        // Count prompts
+        if let Ok(prompts) = db.list_prompt_files() {
+            stats.prompt_count = prompts.len() as i32;
+            
+            // Count unique tags
+            let mut tags = std::collections::HashSet::new();
+            for prompt in prompts {
+                if let Some(tag_str) = prompt.tags {
+                    if let Ok(tag_array) = serde_json::from_str::<Vec<String>>(&tag_str) {
+                        for tag in tag_array {
+                            tags.insert(tag);
+                        }
+                    }
+                }
+            }
+            stats.tag_count = tags.len() as i32;
+        }
+        
+        // Count file history entries
+        if let Ok(conn) = rusqlite::Connection::open(&db_path) {
+            if let Ok(count) = conn.query_row::<i32, _, _>(
+                "SELECT COUNT(*) FROM file_history",
+                [],
+                |row| row.get(0),
+            ) {
+                stats.history_count = count;
+            }
+            
+            // Count execution history entries
+            if let Ok(count) = conn.query_row::<i32, _, _>(
+                "SELECT COUNT(*) FROM execution_history",
+                [],
+                |row| row.get(0),
+            ) {
+                stats.execution_count = count;
+            }
+        }
+    }
+    
+    Ok(stats)
+}
+
+#[tauri::command]
+pub fn initialize_workspace_db(workspace_path: String) -> Result<(), String> {
+    let path = Path::new(&workspace_path);
+    
+    if !path.exists() {
+        return Err("Workspace path does not exist".to_string());
+    }
+    
+    // Create .vibebase directory
+    let vibebase_dir = path.join(".vibebase");
+    fs::create_dir_all(&vibebase_dir).map_err(|e| format!("创建 .vibebase 目录失败: {}", e))?;
+    
+    // Initialize database (will create schema if not exists)
+    ProjectDatabase::new(path).map_err(|e| format!("初始化数据库失败: {}", e))?;
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub fn clear_workspace_db(workspace_path: String) -> Result<(), String> {
+    let path = Path::new(&workspace_path);
+    let db_path = path.join(".vibebase").join("project.db");
+    
+    if !db_path.exists() {
+        return Err("数据库文件不存在".to_string());
+    }
+    
+    // Open database and clear all data
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| format!("打开数据库失败: {}", e))?;
+    
+    // Delete all data from tables
+    conn.execute("DELETE FROM file_history", [])
+        .map_err(|e| format!("清空 file_history 失败: {}", e))?;
+    
+    conn.execute("DELETE FROM execution_history", [])
+        .map_err(|e| format!("清空 execution_history 失败: {}", e))?;
+    
+    conn.execute("DELETE FROM evaluation_results", [])
+        .map_err(|e| format!("清空 evaluation_results 失败: {}", e))?;
+    
+    conn.execute("DELETE FROM test_results", [])
+        .map_err(|e| format!("清空 test_results 失败: {}", e))?;
+    
+    conn.execute("DELETE FROM comparison_results", [])
+        .map_err(|e| format!("清空 comparison_results 失败: {}", e))?;
+    
+    conn.execute("DELETE FROM file_dependencies", [])
+        .map_err(|e| format!("清空 file_dependencies 失败: {}", e))?;
+    
+    conn.execute("DELETE FROM test_datasets", [])
+        .map_err(|e| format!("清空 test_datasets 失败: {}", e))?;
+    
+    conn.execute("DELETE FROM evaluation_rules", [])
+        .map_err(|e| format!("清空 evaluation_rules 失败: {}", e))?;
+    
+    conn.execute("DELETE FROM prompt_files", [])
+        .map_err(|e| format!("清空 prompt_files 失败: {}", e))?;
+    
+    // Vacuum to reclaim space
+    conn.execute("VACUUM", [])
+        .map_err(|e| format!("整理数据库空间失败: {}", e))?;
+    
     Ok(())
 }
