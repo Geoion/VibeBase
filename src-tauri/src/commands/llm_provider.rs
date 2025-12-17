@@ -23,9 +23,12 @@ pub struct LLMProviderInput {
     pub provider: String,
     pub model: String,
     pub base_url: Option<String>,
-    pub api_key_source: String,  // "keychain" | "env_var"
-    pub api_key_value: Option<String>,  // Actual key (if keychain) or env var name (if env_var)
+    pub api_key: Option<String>,  // API Key stored directly in database
+    pub api_key_source: String,  // "direct" | "env_var"
+    pub api_key_value: Option<String>,  // For backward compatibility or env var name
     pub parameters: Option<String>,  // JSON
+    pub enabled: bool,  // Provider enabled/disabled
+    pub enabled_models: Option<String>,  // JSON array of enabled model IDs
     pub is_default: bool,
 }
 
@@ -36,10 +39,13 @@ pub struct LLMProviderOutput {
     pub provider: String,
     pub model: String,
     pub base_url: Option<String>,
+    pub api_key: Option<String>,  // Masked for display, actual key available via get_llm_provider
     pub api_key_source: String,
     pub api_key_ref: Option<String>,
     pub api_key_status: String,  // "configured" | "missing"
     pub parameters: Option<String>,
+    pub enabled: bool,
+    pub enabled_models: Option<String>,
     pub is_default: bool,
 }
 
@@ -53,31 +59,18 @@ pub fn list_llm_providers(
 
     Ok(providers.into_iter().map(|p| {
         // Check API key status
-        let api_key_status = match p.api_key_source.as_str() {
-            "keychain" => {
-                if let Some(ref key_ref) = p.api_key_ref {
-                    if KeychainService::has_api_key(key_ref) {
-                        "configured"
-                    } else {
-                        "missing"
-                    }
-                } else {
-                    "missing"
-                }
-            }
-            "env_var" => {
-                if let Some(ref env_var) = p.api_key_ref {
-                    if std::env::var(env_var).is_ok() {
-                        "configured"
-                    } else {
-                        "missing"
-                    }
-                } else {
-                    "missing"
-                }
-            }
-            _ => "missing"
-        }.to_string();
+        let api_key_status = if p.api_key.is_some() && !p.api_key.as_ref().unwrap().is_empty() {
+            "configured"
+        } else {
+            "missing"
+        };
+
+        // Mask API key for list view (don't expose full key)
+        let masked_key = if api_key_status == "configured" {
+            Some("••••••••••••••••".to_string())
+        } else {
+            None
+        };
 
         LLMProviderOutput {
             id: p.id,
@@ -85,10 +78,13 @@ pub fn list_llm_providers(
             provider: p.provider,
             model: p.model,
             base_url: p.base_url,
+            api_key: masked_key,
             api_key_source: p.api_key_source,
             api_key_ref: p.api_key_ref,
-            api_key_status,
+            api_key_status: api_key_status.to_string(),
             parameters: p.parameters,
+            enabled: p.enabled,
+            enabled_models: p.enabled_models,
             is_default: p.is_default,
         }
     }).collect())
@@ -101,22 +97,8 @@ pub fn save_llm_provider(
 ) -> Result<String, String> {
     let id = Uuid::new_v4().to_string();
 
-    // If api_key_source is keychain, save the key to keychain
-    let api_key_ref = if input.api_key_source == "keychain" {
-        if let Some(api_key) = &input.api_key_value {
-            // Save to keychain
-            let key_ref = format!("vibebase.{}", input.name);
-            KeychainService::save_api_key(&key_ref, api_key)?;
-            Some(key_ref)
-        } else {
-            return Err("API key value required for keychain storage".to_string());
-        }
-    } else if input.api_key_source == "env_var" {
-        // For env_var, api_key_value is the environment variable name
-        input.api_key_value
-    } else {
-        None
-    };
+    // Store API key directly in database
+    let api_key = input.api_key.or(input.api_key_value);
 
     let config = LLMProviderConfig {
         id,
@@ -124,9 +106,12 @@ pub fn save_llm_provider(
         provider: input.provider,
         model: input.model,
         base_url: input.base_url,
+        api_key,
         api_key_source: input.api_key_source,
-        api_key_ref,
+        api_key_ref: None,  // Not used anymore
         parameters: input.parameters,
+        enabled: input.enabled,
+        enabled_models: input.enabled_models,
         is_default: input.is_default,
     };
 
@@ -149,21 +134,13 @@ pub fn update_llm_provider(
     let existing = db.get_llm_provider(&provider_name)
         .map_err(|e| format!("Provider not found: {}", e))?;
 
-    // Handle API key update
-    let api_key_ref = if input.api_key_source == "keychain" {
-        if let Some(api_key) = &input.api_key_value {
-            // Update keychain
-            let key_ref = format!("vibebase.{}", input.name);
-            KeychainService::save_api_key(&key_ref, api_key)?;
-            Some(key_ref)
-        } else {
-            // Keep existing reference
-            existing.api_key_ref
-        }
-    } else if input.api_key_source == "env_var" {
+    // Update API key if provided, otherwise keep existing
+    let api_key = if input.api_key.is_some() && !input.api_key.as_ref().unwrap().is_empty() {
+        input.api_key
+    } else if input.api_key_value.is_some() && !input.api_key_value.as_ref().unwrap().is_empty() {
         input.api_key_value
     } else {
-        None
+        existing.api_key
     };
 
     let config = LLMProviderConfig {
@@ -172,9 +149,12 @@ pub fn update_llm_provider(
         provider: input.provider,
         model: input.model,
         base_url: input.base_url,
+        api_key,
         api_key_source: input.api_key_source,
-        api_key_ref,
+        api_key_ref: None,
         parameters: input.parameters,
+        enabled: input.enabled,
+        enabled_models: input.enabled_models,
         is_default: input.is_default,
     };
 
@@ -191,16 +171,6 @@ pub fn delete_llm_provider(
 ) -> Result<(), String> {
     let db = state.app_db.lock().unwrap();
     
-    // Get provider to clean up keychain
-    if let Ok(provider) = db.get_llm_provider(&provider_name) {
-        if provider.api_key_source == "keychain" {
-            if let Some(key_ref) = provider.api_key_ref {
-                // Delete from keychain (ignore errors)
-                let _ = KeychainService::delete_api_key(&key_ref);
-            }
-        }
-    }
-
     db.delete_llm_provider(&provider_name)
         .map_err(|e| format!("Failed to delete provider: {}", e))?;
 
@@ -217,31 +187,11 @@ pub fn get_llm_provider(
         .map_err(|e| format!("Provider not found: {}", e))?;
 
     // Check API key status
-    let api_key_status = match provider.api_key_source.as_str() {
-        "keychain" => {
-            if let Some(ref key_ref) = provider.api_key_ref {
-                if KeychainService::has_api_key(key_ref) {
-                    "configured"
-                } else {
-                    "missing"
-                }
-            } else {
-                "missing"
-            }
-        }
-        "env_var" => {
-            if let Some(ref env_var) = provider.api_key_ref {
-                if std::env::var(env_var).is_ok() {
-                    "configured"
-                } else {
-                    "missing"
-                }
-            } else {
-                "missing"
-            }
-        }
-        _ => "missing"
-    }.to_string();
+    let api_key_status = if provider.api_key.is_some() && !provider.api_key.as_ref().unwrap().is_empty() {
+        "configured"
+    } else {
+        "missing"
+    };
 
     Ok(LLMProviderOutput {
         id: provider.id,
@@ -249,10 +199,13 @@ pub fn get_llm_provider(
         provider: provider.provider,
         model: provider.model,
         base_url: provider.base_url,
+        api_key: provider.api_key,  // Return actual key for editing
         api_key_source: provider.api_key_source,
         api_key_ref: provider.api_key_ref,
-        api_key_status,
+        api_key_status: api_key_status.to_string(),
         parameters: provider.parameters,
+        enabled: provider.enabled,
+        enabled_models: provider.enabled_models,
         is_default: provider.is_default,
     })
 }
@@ -266,33 +219,18 @@ pub fn test_llm_provider_connection(
     let provider = db.get_llm_provider(&provider_name)
         .map_err(|e| format!("Provider not found: {}", e))?;
 
-    // Try to get API key
-    let api_key = match provider.api_key_source.as_str() {
-        "keychain" => {
-            if let Some(key_ref) = provider.api_key_ref {
-                KeychainService::get_api_key(&key_ref)?
-            } else {
-                return Err("API key reference not found".to_string());
-            }
-        }
-        "env_var" => {
-            if let Some(env_var) = provider.api_key_ref {
-                std::env::var(&env_var)
-                    .map_err(|_| format!("Environment variable '{}' not found", env_var))?
-            } else {
-                return Err("Environment variable name not found".to_string());
-            }
-        }
-        _ => return Err("Invalid API key source".to_string()),
-    };
-
-    // TODO: Actually test the connection by making a simple API call
-    // For now, just verify we can get the API key
+    // Check if API key exists
+    let api_key = provider.api_key.ok_or("API key not configured".to_string())?;
     
     if api_key.is_empty() {
         return Err("API key is empty".to_string());
     }
 
-    Ok("Connection test successful".to_string())
+    // TODO: Actually test the connection by making a simple API call
+    // For now, just verify we have the API key
+    
+    Ok("Connection test successful (API key configured)".to_string())
 }
+
+
 
