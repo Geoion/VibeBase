@@ -221,5 +221,61 @@
     "save": "儲存",
     "saved": "設定儲存成功",
     "saveFailed": "儲存失敗"
+  },
+  "workspaceManager": {
+    "title": "工作區管理",
+    "description": "查看和管理最近開啟的工作區資料庫",
+    "loading": "載入工作區...",
+    "noWorkspaces": "暫無工作區",
+    "noWorkspacesDesc": "開啟一個工作區後，這裡將顯示工作區資訊",
+    "lastOpened": "最近開啟",
+    "initializeDb": "初始化資料庫",
+    "clearRecords": "清空記錄",
+    "initializeFailed": "初始化失敗",
+    "clearFailed": "清空失敗",
+    "notInitialized": "此工作區尚未初始化資料庫，點擊「初始化資料庫」按鈕開始使用",
+    "loadingStats": "載入統計資訊...",
+    "stats": {
+      "prompts": "Prompts",
+      "tags": "標籤",
+      "dbSize": "資料庫大小",
+      "history": "歷史版本",
+      "executions": "執行記錄"
+    },
+    "deleteConfirm": {
+      "title": "清空資料庫記錄",
+      "message": "確認要清空 {{name}} 的所有資料庫記錄嗎？",
+      "warning": "此操作將刪除所有 Prompt 元資料、執行歷史、檔案歷史等資料，且無法恢復！",
+      "confirm": "確認清空"
+    }
+  },
+  "about": {
+    "slogan": "Prompt 領域的 VS Code + Postman",
+    "version": "版本",
+    "checkUpdate": "檢查更新",
+    "checkUpdateDesc": "檢查是否有新版本可用",
+    "checkNow": "立即檢查",
+    "checking": "檢查中...",
+    "updateAvailable": "發現新版本！",
+    "newVersion": "最新版本",
+    "downloadUpdate": "下載更新",
+    "upToDate": "已是最新版本",
+    "checkUpdateFailed": "檢查更新失敗",
+    "about": "關於",
+    "madeWith": "用愛打造",
+    "madeByTeam": "由 VibeBase 團隊開發",
+    "contact": "聯絡我們",
+    "links": "相關連結",
+    "website": "官方網站",
+    "docs": "文件",
+    "changelog": "更新日誌",
+    "changelogAdded": "新增",
+    "changelogChanged": "變更",
+    "changelogFixed": "修復",
+    "changelogRemoved": "移除",
+    "license": "MIT 授權條款",
+    "openSource": "開源專案",
+    "copyright": "版權所有",
+    "allRightsReserved": "保留所有權利"
   }
 }

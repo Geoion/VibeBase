@@ -221,5 +221,61 @@
     "save": "Save",
     "saved": "Settings saved successfully",
     "saveFailed": "Failed to save settings"
+  },
+  "workspaceManager": {
+    "title": "Workspace Management",
+    "description": "View and manage recently opened workspace databases",
+    "loading": "Loading workspaces...",
+    "noWorkspaces": "No workspaces yet",
+    "noWorkspacesDesc": "Workspace information will appear here after you open one",
+    "lastOpened": "Last opened",
+    "initializeDb": "Initialize Database",
+    "clearRecords": "Clear Records",
+    "initializeFailed": "Initialization failed",
+    "clearFailed": "Clear failed",
+    "notInitialized": "This workspace has not been initialized yet, click \"Initialize Database\" to start using",
+    "loadingStats": "Loading statistics...",
+    "stats": {
+      "prompts": "Prompts",
+      "tags": "Tags",
+      "dbSize": "Database Size",
+      "history": "History Versions",
+      "executions": "Execution Records"
+    },
+    "deleteConfirm": {
+      "title": "Clear Database Records",
+      "message": "Are you sure you want to clear all database records for {{name}}?",
+      "warning": "This will delete all Prompt metadata, execution history, file history and other data, and cannot be recovered!",
+      "confirm": "Confirm Clear"
+    }
+  },
+  "about": {
+    "slogan": "VS Code + Postman for Prompt Engineering",
+    "version": "Version",
+    "checkUpdate": "Check for Updates",
+    "checkUpdateDesc": "Check if a new version is available",
+    "checkNow": "Check Now",
+    "checking": "Checking...",
+    "updateAvailable": "New version available!",
+    "newVersion": "Latest version",
+    "downloadUpdate": "Download Update",
+    "upToDate": "You're up to date",
+    "checkUpdateFailed": "Failed to check for updates",
+    "about": "About",
+    "madeWith": "Made with ❤️",
+    "madeByTeam": "Developed by VibeBase Team",
+    "contact": "Contact",
+    "links": "Links",
+    "website": "Website",
+    "docs": "Documentation",
+    "changelog": "Changelog",
+    "changelogAdded": "Added",
+    "changelogChanged": "Changed",
+    "changelogFixed": "Fixed",
+    "changelogRemoved": "Removed",
+    "license": "MIT License",
+    "openSource": "Open Source",
+    "copyright": "Copyright",
+    "allRightsReserved": "All rights reserved"
   }
 }
