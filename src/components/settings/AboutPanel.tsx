@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/tauri";
 import { open } from "@tauri-apps/api/shell";
@@ -64,23 +64,29 @@ export default function AboutPanel() {
   const [checking, setChecking] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<VersionInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [version, setVersion] = useState("0.1.0");
+
+  // 获取应用版本号
+  const loadVersion = async () => {
+    try {
+      const ver = await invoke<string>("get_app_version");
+      setVersion(ver);
+    } catch (error) {
+      console.error("Failed to load version:", error);
+    }
+  };
+
+  // 组件加载时获取版本号
+  useEffect(() => {
+    loadVersion();
+  }, []);
 
   const handleCheckUpdate = async () => {
     setChecking(true);
     setError(null);
-    
+
     try {
-      // 模拟检查更新 - 实际项目中应该调用真实的更新服务
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      const info: VersionInfo = {
-        current_version: "0.1.0",
-        latest_version: "0.1.0",
-        update_available: false,
-        download_url: "https://github.com/your-repo/vibebase/releases",
-        release_notes: "You are running the latest version.",
-      };
-      
+      const info = await invoke<VersionInfo>("check_for_updates");
       setUpdateInfo(info);
     } catch (err: any) {
       setError(err.message || t("about.checkUpdateFailed"));
@@ -112,7 +118,7 @@ export default function AboutPanel() {
             {t("about.slogan")}
           </p>
           <p className="text-sm text-muted-foreground">
-            {t("about.version")}: <span className="font-mono font-semibold">v0.1.0</span>
+            {t("about.version")}: <span className="font-mono font-semibold">v{version}</span>
           </p>
         </div>
       </div>
@@ -137,11 +143,10 @@ export default function AboutPanel() {
         </div>
 
         {updateInfo && (
-          <div className={`flex items-start gap-3 p-4 rounded-lg ${
-            updateInfo.update_available 
-              ? "bg-blue-500/10 border border-blue-500/20" 
-              : "bg-green-500/10 border border-green-500/20"
-          }`}>
+          <div className={`flex items-start gap-3 p-4 rounded-lg ${updateInfo.update_available
+            ? "bg-blue-500/10 border border-blue-500/20"
+            : "bg-green-500/10 border border-green-500/20"
+            }`}>
             {updateInfo.update_available ? (
               <>
                 <Download className="w-5 h-5 text-blue-500 mt-0.5" />
@@ -193,7 +198,7 @@ export default function AboutPanel() {
       {/* Author & Links */}
       <div className="border border-border rounded-lg p-6 space-y-4">
         <h3 className="text-lg font-semibold mb-4">{t("about.about")}</h3>
-        
+
         <div className="space-y-3">
           <div className="flex items-center gap-3 text-sm">
             <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
@@ -231,7 +236,7 @@ export default function AboutPanel() {
                 <span className="text-sm">GitHub</span>
                 <ExternalLink className="w-3 h-3 ml-auto" />
               </button>
-              
+
               <button
                 onClick={() => handleOpenLink("https://vibebase.dev")}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
@@ -240,7 +245,7 @@ export default function AboutPanel() {
                 <span className="text-sm">{t("about.website")}</span>
                 <ExternalLink className="w-3 h-3 ml-auto" />
               </button>
-              
+
               <button
                 onClick={() => handleOpenLink("https://twitter.com/vibebase")}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
@@ -249,7 +254,7 @@ export default function AboutPanel() {
                 <span className="text-sm">Twitter</span>
                 <ExternalLink className="w-3 h-3 ml-auto" />
               </button>
-              
+
               <button
                 onClick={() => handleOpenLink("https://docs.vibebase.dev")}
                 className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
@@ -266,7 +271,7 @@ export default function AboutPanel() {
       {/* Changelog */}
       <div className="border border-border rounded-lg p-6 space-y-4">
         <h3 className="text-lg font-semibold mb-4">{t("about.changelog")}</h3>
-        
+
         <div className="space-y-6">
           {CHANGELOG.map((entry, index) => (
             <div key={index} className="space-y-3">
