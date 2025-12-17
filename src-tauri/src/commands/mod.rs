@@ -7,4 +7,7 @@ pub mod validation;
 pub mod variables;
 pub mod window;
 pub mod recent_projects;
+pub mod provider_models;
+pub mod history;
+pub mod metadata;
 
