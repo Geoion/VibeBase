@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { useTranslation } from "react-i18next";
-import { Search, Eye, EyeOff, Zap, Trash2 } from "lucide-react";
+import { Search, Eye, EyeOff, Zap, Trash2, CheckCircle, XCircle, Loader2 } from "lucide-react";
 
 interface LLMProvider {
   id: string;
@@ -62,12 +62,17 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
   const [models, setModels] = useState<ProviderModel[]>([]);
   const [savedEnabledModels, setSavedEnabledModels] = useState<string[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
-  
+
   // Model selection dialog state
   const [showModelDialog, setShowModelDialog] = useState(false);
   const [availableModels, setAvailableModels] = useState<ProviderModel[]>([]);
   const [dialogSearchQuery, setDialogSearchQuery] = useState("");
   const [selectedModelsInDialog, setSelectedModelsInDialog] = useState<Set<string>>(new Set());
+
+  // Test connection state
+  const [testingConnection, setTestingConnection] = useState(false);
+  const [showTestResult, setShowTestResult] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     loadProviders();
@@ -218,14 +223,6 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     loadProviderDetailsWithData(providerName, providers);
   };
 
-  const handleFetchModels = async () => {
-    if (!selectedProvider || !apiKey) {
-      alert("Please enter an API Key first");
-      return;
-    }
-
-    await fetchModelsWithKey(apiKey, false);
-  };
 
   const handleOpenModelDialog = async () => {
     if (!selectedProvider || !apiKey) {
@@ -254,11 +251,11 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
         manual: false,
       }));
       setAvailableModels(available);
-      
+
       // Pre-select currently enabled models
       const currentlyEnabled = new Set(models.filter(m => m.enabled).map(m => m.id));
       setSelectedModelsInDialog(currentlyEnabled);
-      
+
       setShowModelDialog(true);
     } catch (error) {
       console.error("Failed to fetch models:", error);
@@ -277,7 +274,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
         ...m,
         enabled: true,
       }));
-    
+
     setModels(updatedModels);
     setSaved(false);
     setShowModelDialog(false);
@@ -296,59 +293,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     });
   };
 
-  // Internal function to fetch models with a specific API key
-  const fetchModelsWithKey = async (keyToUse: string, isAutoFetch: boolean = false) => {
-    if (!selectedProvider || !keyToUse) {
-      if (!isAutoFetch) {
-        alert("Please enter an API Key first");
-      }
-      return;
-    }
 
-    setFetchingModels(true);
-    try {
-      const selectedBuiltin = BUILTIN_PROVIDERS.find(p => p.id === selectedProvider);
-      if (!selectedBuiltin) return;
-
-      const modelsList = await invoke<Array<{ id: string, name: string, description?: string }>>("fetch_provider_models", {
-        provider: selectedBuiltin.id,
-        apiKey: keyToUse,
-        baseUrl: undefined,
-      });
-
-      // Use saved enabled models from state
-      const enabledModelIds = savedEnabledModels.length > 0 ? savedEnabledModels : [];
-
-      setModels(modelsList.map((m, index) => ({
-        id: m.id,
-        name: m.id,
-        displayName: m.name,
-        modelPath: m.id,
-        enabled: enabledModelIds.length > 0
-          ? enabledModelIds.includes(m.id)
-          : index === 0, // Enable first model by default only if no existing config
-        manual: false,
-      })));
-
-      if (!isAutoFetch) {
-        setSaved(false);
-      }
-    } catch (error) {
-      console.error("Failed to fetch models:", error);
-      if (!isAutoFetch) {
-        alert("Failed to fetch models: " + error);
-      }
-    } finally {
-      setFetchingModels(false);
-    }
-  };
-
-  const handleToggleModel = (modelId: string) => {
-    setModels((prev) =>
-      prev.map((m) => (m.id === modelId ? { ...m, enabled: !m.enabled } : m))
-    );
-    setSaved(false);
-  };
 
   const handleDeleteModel = (modelId: string) => {
     if (confirm(t("providers.deleteModelConfirm", "Delete this model?"))) {
@@ -419,10 +364,15 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
   const handleTestConnection = async () => {
     if (!selectedProvider || !apiKey) {
-      alert("Please enter an API Key first");
+      setTestResult({
+        success: false,
+        message: t("providers.testNoApiKey", "请先输入 API Key")
+      });
+      setShowTestResult(true);
       return;
     }
 
+    setTestingConnection(true);
     try {
       const selectedBuiltin = BUILTIN_PROVIDERS.find(p => p.id === selectedProvider);
       if (!selectedBuiltin) return;
@@ -433,10 +383,20 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
         baseUrl: undefined,
       });
 
-      alert(result);
-    } catch (error) {
+      setTestResult({
+        success: true,
+        message: result
+      });
+      setShowTestResult(true);
+    } catch (error: any) {
       console.error("Connection test failed:", error);
-      alert("Connection test failed: " + error);
+      setTestResult({
+        success: false,
+        message: error.toString()
+      });
+      setShowTestResult(true);
+    } finally {
+      setTestingConnection(false);
     }
   };
 
@@ -608,10 +568,15 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                     )}
                     <button
                       onClick={handleTestConnection}
-                      className="p-2 hover:bg-accent rounded-lg transition-colors"
+                      disabled={testingConnection}
+                      className="p-2 hover:bg-accent rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                       title={t("providers.testConnection")}
                     >
-                      <Zap className="w-4 h-4" />
+                      {testingConnection ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Zap className="w-4 h-4" />
+                      )}
                     </button>
                     <button
                       onClick={handleToggleProviderEnabled}
@@ -777,6 +742,164 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
         </div>
       </div>
 
+      {/* Model Selection Dialog */}
+      {showModelDialog && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="w-[700px] max-h-[80vh] bg-card border border-border rounded-lg shadow-xl flex flex-col">
+            {/* Dialog Header */}
+            <div className="px-6 py-4 border-b border-border">
+              <h3 className="text-lg font-semibold">{t("providers.selectModels", "选择模型")}</h3>
+              <p className="text-sm text-muted-foreground mt-1">
+                从 {availableModels.length} 个可用模型中选择
+              </p>
+            </div>
+
+            {/* Search */}
+            <div className="px-6 py-3 border-b border-border">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <input
+                  type="text"
+                  value={dialogSearchQuery}
+                  onChange={(e) => setDialogSearchQuery(e.target.value)}
+                  placeholder={t("providers.searchModels")}
+                  className="w-full pl-9 pr-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                />
+              </div>
+            </div>
+
+            {/* Models List */}
+            <div className="flex-1 overflow-auto px-6 py-4">
+              <div className="space-y-2">
+                {filteredDialogModels.length === 0 ? (
+                  <p className="text-sm text-muted-foreground text-center py-8">
+                    {dialogSearchQuery
+                      ? t("providers.noModelsFound", "未找到匹配的模型")
+                      : "没有可用的模型"}
+                  </p>
+                ) : (
+                  filteredDialogModels.map((model) => {
+                    const isSelected = selectedModelsInDialog.has(model.id);
+                    return (
+                      <button
+                        key={model.id}
+                        onClick={() => handleToggleModelInDialog(model.id)}
+                        className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${isSelected
+                          ? "bg-primary/10 border border-primary"
+                          : "bg-accent/50 hover:bg-accent border border-transparent"
+                          }`}
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="text-sm font-medium text-foreground mb-1">
+                            {model.displayName}
+                          </div>
+                          <p className="text-xs text-muted-foreground truncate">
+                            {model.modelPath}
+                          </p>
+                        </div>
+                        <div
+                          className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${isSelected
+                            ? "bg-primary border-primary"
+                            : "border-muted-foreground/30"
+                            }`}
+                        >
+                          {isSelected && (
+                            <svg
+                              className="w-3 h-3 text-primary-foreground"
+                              fill="none"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth="2"
+                              viewBox="0 0 24 24"
+                              stroke="currentColor"
+                            >
+                              <path d="M5 13l4 4L19 7" />
+                            </svg>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })
+                )}
+              </div>
+            </div>
+
+            {/* Dialog Footer */}
+            <div className="px-6 py-4 border-t border-border flex items-center justify-between">
+              <p className="text-sm text-muted-foreground">
+                已选择 {selectedModelsInDialog.size} 个模型
+              </p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => {
+                    setShowModelDialog(false);
+                    setDialogSearchQuery("");
+                  }}
+                  className="px-4 py-2 text-sm font-medium text-foreground bg-secondary rounded hover:bg-secondary/80"
+                >
+                  {t("actions.cancel")}
+                </button>
+                <button
+                  onClick={handleConfirmModelSelection}
+                  disabled={selectedModelsInDialog.size === 0}
+                  className="px-4 py-2 text-sm font-medium text-white bg-primary rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {t("actions.confirm", "确认")}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Test Connection Result Dialog */}
+      {showTestResult && testResult && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="w-[500px] bg-card border border-border rounded-lg shadow-xl">
+            {/* Dialog Header */}
+            <div className={`px-6 py-4 border-b flex items-center gap-3 ${testResult.success
+                ? "bg-green-500/10 border-green-500/20"
+                : "bg-red-500/10 border-red-500/20"
+              }`}>
+              {testResult.success ? (
+                <CheckCircle className="w-6 h-6 text-green-500" />
+              ) : (
+                <XCircle className="w-6 h-6 text-red-500" />
+              )}
+              <div>
+                <h3 className="text-lg font-semibold">
+                  {testResult.success
+                    ? t("providers.testSuccess", "连接成功")
+                    : t("providers.testFailed", "连接失败")}
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  {selectedBuiltinProvider?.name}
+                </p>
+              </div>
+            </div>
+
+            {/* Dialog Content */}
+            <div className="px-6 py-4">
+              <div className={`p-4 rounded-lg text-sm ${testResult.success
+                  ? "bg-green-500/5 border border-green-500/20 text-foreground"
+                  : "bg-red-500/5 border border-red-500/20 text-foreground"
+                }`}>
+                <p className="whitespace-pre-wrap break-words">{testResult.message}</p>
+              </div>
+            </div>
+
+            {/* Dialog Footer */}
+            <div className="px-6 py-4 border-t border-border flex justify-end">
+              <button
+                onClick={() => setShowTestResult(false)}
+                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded hover:bg-primary/90"
+              >
+                {t("actions.close")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
