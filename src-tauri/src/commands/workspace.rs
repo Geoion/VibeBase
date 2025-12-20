@@ -5,6 +5,7 @@ use std::fs;
 use std::path::Path;
 use uuid::Uuid;
 use serde::{Deserialize, Serialize};
+use std::process::Command;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct WorkspaceStats {
@@ -456,4 +457,166 @@ pub fn clear_workspace_db(workspace_path: String) -> Result<(), String> {
         .map_err(|e| format!("整理数据库空间失败: {}", e))?;
     
     Ok(())
+}
+
+#[tauri::command]
+pub fn rename_file(old_path: String, new_name: String) -> Result<String, String> {
+    let old_path_obj = Path::new(&old_path);
+    
+    if !old_path_obj.exists() {
+        return Err("文件或文件夹不存在".to_string());
+    }
+    
+    // 验证新名称
+    if new_name.is_empty() {
+        return Err("名称不能为空".to_string());
+    }
+    
+    if new_name.contains('/') || new_name.contains('\\') {
+        return Err("名称不能包含路径分隔符".to_string());
+    }
+    
+    if new_name.starts_with('.') {
+        return Err("名称不能以点号开头".to_string());
+    }
+    
+    // 获取父目录
+    let parent_dir = old_path_obj.parent().ok_or("无法获取父目录")?;
+    
+    // 构建新路径
+    let new_path = parent_dir.join(&new_name);
+    
+    // 检查目标是否已存在
+    if new_path.exists() {
+        return Err(format!("名称 '{}' 已存在", new_name));
+    }
+    
+    // 执行重命名
+    fs::rename(&old_path_obj, &new_path)
+        .map_err(|e| format!("重命名失败: {}", e))?;
+    
+    Ok(new_path.to_str().unwrap_or("").to_string())
+}
+
+#[tauri::command]
+pub fn show_in_folder(path: String) -> Result<(), String> {
+    let file_path = Path::new(&path);
+    
+    // Get the parent directory
+    let folder_path = if file_path.is_dir() {
+        file_path
+    } else {
+        file_path.parent().ok_or("无法获取父目录")?
+    };
+    
+    #[cfg(target_os = "macos")]
+    {
+        // On macOS, use 'open -R' to reveal the file in Finder
+        let result = if file_path.is_dir() {
+            Command::new("open")
+                .arg(folder_path)
+                .spawn()
+        } else {
+            Command::new("open")
+                .arg("-R")
+                .arg(&path)
+                .spawn()
+        };
+        
+        result.map_err(|e| format!("无法打开访达: {}", e))?;
+    }
+    
+    #[cfg(target_os = "windows")]
+    {
+        // On Windows, use 'explorer /select,' to highlight the file
+        let result = if file_path.is_dir() {
+            Command::new("explorer")
+                .arg(folder_path)
+                .spawn()
+        } else {
+            Command::new("explorer")
+                .arg("/select,")
+                .arg(&path)
+                .spawn()
+        };
+        
+        result.map_err(|e| format!("无法打开资源管理器: {}", e))?;
+    }
+    
+    #[cfg(target_os = "linux")]
+    {
+        // On Linux, try various file managers
+        let result = Command::new("xdg-open")
+            .arg(folder_path)
+            .spawn()
+            .or_else(|_| Command::new("nautilus").arg(folder_path).spawn())
+            .or_else(|_| Command::new("dolphin").arg(folder_path).spawn())
+            .or_else(|_| Command::new("thunar").arg(folder_path).spawn());
+        
+        result.map_err(|e| format!("无法打开文件管理器: {}", e))?;
+    }
+    
+    Ok(())
+}
+
+#[tauri::command]
+pub fn save_arena_battle(
+    workspace_path: Option<String>,
+    prompt_file_id: Option<String>,
+    prompt_content: String,
+    input_variables: String,
+    models: String,
+    outputs: String,
+) -> Result<String, String> {
+    // 如果没有提供 workspace_path，尝试从当前上下文获取
+    let ws_path = workspace_path.ok_or("Workspace path is required")?;
+    
+    println!("[Rust] Saving arena battle to workspace: {}", ws_path);
+    println!("[Rust] Database path: {}/.vibebase/project.db", ws_path);
+    
+    let db = ProjectDatabase::new(Path::new(&ws_path))
+        .map_err(|e| format!("Failed to open project database: {}", e))?;
+    
+    let id = db.save_arena_battle(
+        prompt_file_id,
+        &prompt_content,
+        &input_variables,
+        &models,
+        &outputs,
+    ).map_err(|e| format!("Failed to save arena battle: {}", e))?;
+    
+    println!("[Rust] Arena battle saved with ID: {}", id);
+    Ok(id)
+}
+
+#[tauri::command]
+pub fn update_arena_votes(
+    workspace_path: String,
+    battle_id: String,
+    winner_model: Option<String>,
+    votes: String,
+) -> Result<(), String> {
+    let db = ProjectDatabase::new(Path::new(&workspace_path))
+        .map_err(|e| format!("Failed to open project database: {}", e))?;
+    
+    db.update_arena_votes(&battle_id, winner_model, &votes)
+        .map_err(|e| format!("Failed to update votes: {}", e))
+}
+
+#[tauri::command]
+pub fn get_arena_battles(
+    workspace_path: String,
+    limit: Option<usize>,
+) -> Result<Vec<crate::services::database::ArenaBattle>, String> {
+    println!("[Rust] Getting arena battles from workspace: {}", workspace_path);
+    println!("[Rust] Database path: {}/.vibebase/project.db", workspace_path);
+    
+    let db = ProjectDatabase::new(Path::new(&workspace_path))
+        .map_err(|e| format!("Failed to open project database: {}", e))?;
+    
+    let battles = db.get_arena_battles(None, limit.unwrap_or(100))
+        .map_err(|e| format!("Failed to get arena battles: {}", e))?;
+    
+    println!("[Rust] Found {} arena battles", battles.len());
+    Ok(battles)
 }
