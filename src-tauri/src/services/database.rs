@@ -546,6 +546,108 @@ impl ProjectDatabase {
         
         Ok(())
     }
+
+    /// Save arena battle result
+    pub fn save_arena_battle(
+        &self,
+        prompt_file_id: Option<String>,
+        prompt_content: &str,
+        input_variables: &str,  // JSON
+        models: &str,           // JSON array
+        outputs: &str,          // JSON array
+    ) -> Result<String> {
+        let id = uuid::Uuid::new_v4().to_string();
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+        
+        self.conn.execute(
+            "INSERT INTO arena_battles (
+                id, prompt_file_id, prompt_content, input_variables,
+                models, outputs, winner_model, votes, timestamp
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)",
+            params![
+                id,
+                prompt_file_id,
+                prompt_content,
+                input_variables,
+                models,
+                outputs,
+                None::<String>,  // winner_model
+                None::<String>,  // votes
+                now,
+            ],
+        )?;
+        
+        Ok(id)
+    }
+
+    /// Get arena battles for a specific prompt
+    pub fn get_arena_battles(&self, prompt_file_id: Option<&str>, limit: usize) -> Result<Vec<ArenaBattle>> {
+        let (query, params): (&str, Vec<Box<dyn rusqlite::ToSql>>) = if let Some(file_id) = prompt_file_id {
+            (
+                "SELECT id, prompt_file_id, prompt_content, input_variables, models, outputs, winner_model, votes, timestamp
+                 FROM arena_battles
+                 WHERE prompt_file_id = ?1
+                 ORDER BY timestamp DESC
+                 LIMIT ?2",
+                vec![Box::new(file_id.to_string()), Box::new(limit as i64)]
+            )
+        } else {
+            (
+                "SELECT id, prompt_file_id, prompt_content, input_variables, models, outputs, winner_model, votes, timestamp
+                 FROM arena_battles
+                 ORDER BY timestamp DESC
+                 LIMIT ?1",
+                vec![Box::new(limit as i64)]
+            )
+        };
+
+        let mut stmt = self.conn.prepare(query)?;
+        
+        let params_refs: Vec<&dyn rusqlite::ToSql> = params.iter().map(|p| p.as_ref()).collect();
+        
+        let battles = stmt.query_map(params_refs.as_slice(), |row| {
+            Ok(ArenaBattle {
+                id: row.get(0)?,
+                prompt_file_id: row.get(1)?,
+                prompt_content: row.get(2)?,
+                input_variables: row.get(3)?,
+                models: row.get(4)?,
+                outputs: row.get(5)?,
+                winner_model: row.get(6)?,
+                votes: row.get(7)?,
+                timestamp: row.get(8)?,
+            })
+        })?;
+
+        battles.collect()
+    }
+
+    /// Update arena battle votes and winner
+    pub fn update_arena_votes(
+        &self,
+        battle_id: &str,
+        winner_model: Option<String>,
+        votes: &str,  // JSON
+    ) -> Result<()> {
+        self.conn.execute(
+            "UPDATE arena_battles SET winner_model = ?1, votes = ?2 WHERE id = ?3",
+            params![winner_model, votes, battle_id],
+        )?;
+        Ok(())
+    }
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct ArenaBattle {
+    pub id: String,
+    pub prompt_file_id: Option<String>,
+    pub prompt_content: String,
+    pub input_variables: String,  // JSON
+    pub models: String,            // JSON array
+    pub outputs: String,           // JSON array
+    pub winner_model: Option<String>,
+    pub votes: Option<String>,
+    pub timestamp: i64,
 }
 
 /// File history entry for version control
