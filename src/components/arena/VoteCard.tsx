@@ -18,6 +18,7 @@ interface VoteCardProps {
   isLoading?: boolean;
   isReadOnly?: boolean;
   error?: string | null;
+  cardWidth?: string;
   onVote: () => void;
   onMarkWinner: () => void;
   onRetry?: () => void;
@@ -34,6 +35,7 @@ export default function VoteCard({
   isLoading = false,
   isReadOnly = false,
   error = null,
+  cardWidth = "w-80 flex-shrink-0",
   onVote,
   onMarkWinner,
   onRetry,
@@ -49,7 +51,7 @@ export default function VoteCard({
   }, [output, isLoading, error]);
 
   return (
-    <div className={`w-80 flex-shrink-0 border rounded-lg overflow-hidden flex flex-col h-full ${isWinner ? "border-yellow-500 shadow-lg shadow-yellow-500/20" : "border-border"
+    <div className={`${cardWidth} border rounded-lg overflow-hidden flex flex-col h-full ${isWinner ? "border-yellow-500 shadow-lg shadow-yellow-500/20" : "border-border"
       }`}>
       {/* Header */}
       <div className={`p-3 border-b flex-shrink-0 ${isWinner ? "bg-yellow-500/10 border-yellow-500/20" : "bg-secondary/50 border-border"
@@ -109,16 +111,16 @@ export default function VoteCard({
           <p className="text-xs font-medium text-muted-foreground mb-1.5">
             {t("arena.metadata")}
           </p>
-          <div className="grid grid-cols-2 gap-1.5 text-xs">
-            <div className="p-1.5 bg-secondary/30 rounded">
+          <div className="flex flex-wrap gap-1.5 text-xs">
+            <div className="p-1.5 bg-secondary/30 rounded whitespace-nowrap">
               <span className="text-muted-foreground">{t("arena.latency")}:</span>
               <span className="ml-1 font-medium">{metadata.latency_ms}ms</span>
             </div>
-            <div className="p-1.5 bg-secondary/30 rounded">
+            <div className="p-1.5 bg-secondary/30 rounded whitespace-nowrap">
               <span className="text-muted-foreground">{t("arena.cost")}:</span>
               <span className="ml-1 font-medium">${metadata.cost_usd.toFixed(4)}</span>
             </div>
-            <div className="col-span-2 p-1.5 bg-secondary/30 rounded">
+            <div className="p-1.5 bg-secondary/30 rounded whitespace-nowrap">
               <span className="text-muted-foreground">{t("arena.tokens")}:</span>
               <span className="ml-1 font-medium">
                 {metadata.tokens_input} / {metadata.tokens_output}
@@ -135,7 +137,7 @@ export default function VoteCard({
             <button
               onClick={onVote}
               disabled={isLoading}
-              className={`flex-1 flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm transition-colors ${isLoading
+              className={`flex items-center justify-center gap-1.5 px-4 py-2 rounded-md text-sm transition-colors whitespace-nowrap ${isLoading
                 ? "opacity-50 cursor-not-allowed bg-secondary"
                 : hasVoted
                   ? "bg-primary text-primary-foreground"
@@ -148,7 +150,7 @@ export default function VoteCard({
             <button
               onClick={onMarkWinner}
               disabled={isLoading}
-              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm transition-colors ${isLoading
+              className={`flex items-center justify-center gap-1.5 px-3 py-2 rounded-md text-sm transition-colors whitespace-nowrap ${isLoading
                 ? "opacity-50 cursor-not-allowed bg-secondary"
                 : isWinner
                   ? "bg-yellow-500 text-white"
