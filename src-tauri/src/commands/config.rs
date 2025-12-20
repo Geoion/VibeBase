@@ -1,20 +1,24 @@
-use crate::models::config::WorkspaceConfig;
+use crate::models::config::{WorkspaceConfig, ArenaSettings};
 use crate::services::keychain::KeychainService;
-use std::fs;
-use std::path::Path;
+use crate::services::database::AppDatabase;
+use tauri::State;
+use std::sync::Mutex;
 
+/// @deprecated This command is no longer used in v2.0 architecture.
+/// Workspace configuration is no longer needed - users select LLM providers
+/// directly in the execution panel.
+/// 
+/// Keeping for backward compatibility only.
 #[tauri::command]
-pub fn read_config(workspace_path: String) -> Result<WorkspaceConfig, String> {
-    let config_path = Path::new(&workspace_path).join("vibe.config.yaml");
-    
-    if !config_path.exists() {
-        return Err("vibe.config.yaml not found".to_string());
-    }
+pub fn read_config(_workspace_path: String) -> Result<WorkspaceConfig, String> {
+    // Return a minimal empty config for backward compatibility
+    Err("Workspace configuration is no longer used. Please select LLM Provider directly in execution panel.".to_string())
+}
 
-    let content = fs::read_to_string(&config_path).map_err(|e| e.to_string())?;
-    
-    serde_yaml::from_str::<WorkspaceConfig>(&content)
-        .map_err(|e| format!("Config parse error: {}", e))
+/// @deprecated This command is no longer used in v2.0 architecture.
+#[tauri::command]
+pub fn save_config(_workspace_path: String, _config: WorkspaceConfig) -> Result<(), String> {
+    Err("Workspace configuration is no longer used. Configure LLM Providers in Settings instead.".to_string())
 }
 
 #[tauri::command]
@@ -40,32 +44,66 @@ pub fn delete_api_key_from_keychain(environment: String) -> Result<(), String> {
     KeychainService::delete_api_key(&environment)
 }
 
+/// @deprecated This command is no longer used in v2.0 architecture.
+/// API keys are now retrieved directly from keychain using the provider's api_key_ref.
 #[tauri::command]
 pub fn get_api_key_for_environment(
-    config: WorkspaceConfig,
-    environment_name: String,
+    _config: WorkspaceConfig,
+    _environment_name: String,
 ) -> Result<String, String> {
-    let env = config
-        .get_environment(&environment_name)
-        .ok_or_else(|| format!("Environment '{}' not found", environment_name))?;
+    Err("This command is deprecated. Use get_api_key_from_keychain with provider's api_key_ref instead.".to_string())
+}
 
-    // Try to get from keychain first
-    if KeychainService::has_api_key(&environment_name) {
-        return KeychainService::get_api_key(&environment_name);
-    }
+pub struct AppSettingsState {
+    pub app_db: Mutex<AppDatabase>,
+}
 
-    // Try to get from environment variable
-    if let Some(env_var) = &env.api_key_env_var {
-        if let Ok(key) = std::env::var(env_var) {
-            return Ok(key);
+impl AppSettingsState {
+    pub fn new() -> Self {
+        Self {
+            app_db: Mutex::new(AppDatabase::new().expect("Failed to initialize app database")),
         }
     }
-
-    Err(format!(
-        "API key not found for environment '{}'. Please configure it.",
-        environment_name
-    ))
 }
+
+/// Get Arena settings from app_settings table
+#[tauri::command]
+pub fn get_arena_settings(state: State<AppSettingsState>) -> Result<ArenaSettings, String> {
+    let db = state.app_db.lock().map_err(|e| e.to_string())?;
+    
+    match db.get_app_setting("arena_settings") {
+        Ok(json_str) => {
+            serde_json::from_str(&json_str)
+                .map_err(|e| format!("Failed to parse arena settings: {}", e))
+        }
+        Err(_) => {
+            // Return default settings if not found
+            Ok(ArenaSettings::default())
+        }
+    }
+}
+
+/// Save Arena settings to app_settings table
+#[tauri::command]
+pub fn save_arena_settings(
+    settings: ArenaSettings,
+    state: State<AppSettingsState>,
+) -> Result<(), String> {
+    let db = state.app_db.lock().map_err(|e| e.to_string())?;
+    
+    let json_str = serde_json::to_string(&settings)
+        .map_err(|e| format!("Failed to serialize settings: {}", e))?;
+    
+    db.save_app_setting("arena_settings", &json_str)
+        .map_err(|e| format!("Failed to save settings: {}", e))
+}
+
+
+
+
+
+
+
 
 
 
