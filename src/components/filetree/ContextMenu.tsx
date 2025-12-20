@@ -1,5 +1,5 @@
 import { FileNode } from "../../stores/workspaceStore";
-import { FilePlus, FolderPlus, Trash2 } from "lucide-react";
+import { FilePlus, FolderPlus, Trash2, Edit3 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 interface ContextMenuProps {
@@ -8,6 +8,7 @@ interface ContextMenuProps {
   onClose: () => void;
   onNewFile: () => void;
   onNewFolder: () => void;
+  onRename?: () => void;
   onDelete?: () => void;
 }
 
@@ -17,6 +18,7 @@ export default function ContextMenu({
   onClose,
   onNewFile,
   onNewFolder,
+  onRename,
   onDelete,
 }: ContextMenuProps) {
   const { t } = useTranslation();
@@ -52,6 +54,19 @@ export default function ContextMenu({
             </button>
             <div className="h-px bg-border my-1" />
           </>
+        )}
+
+        {onRename && (
+          <button
+            onClick={() => {
+              onRename();
+              onClose();
+            }}
+            className="w-full px-3 py-2 text-left text-sm hover:bg-accent transition-colors flex items-center gap-2"
+          >
+            <Edit3 className="w-4 h-4" />
+            {t("actions.rename")}
+          </button>
         )}
 
         {onDelete && (
