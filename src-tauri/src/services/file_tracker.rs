@@ -6,10 +6,12 @@ use uuid::Uuid;
 use crate::services::database::{ProjectDatabase, PromptFileMetadata};
 use crate::models::prompt::parse_markdown_prompt;
 
+#[allow(dead_code)]
 pub struct FileTracker {
     db: ProjectDatabase,
 }
 
+#[allow(dead_code)]
 impl FileTracker {
     pub fn new(db: ProjectDatabase) -> Self {
         Self { db }
