@@ -374,10 +374,6 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     }
   };
 
-  const handleAddCustomProvider = () => {
-    alert("Add custom provider not yet implemented");
-  };
-
   const handleTestConnection = async () => {
     if (!selectedProvider || !apiKey) {
       setTestResult({
@@ -529,9 +525,10 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
               />
             </div>
             <button
-              onClick={handleAddCustomProvider}
-              className="w-full px-4 py-2 text-sm font-medium text-white bg-primary rounded-lg hover:bg-primary/90"
+              onClick={() => setShowCustomProviderDialog(true)}
+              className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium bg-primary text-primary-foreground rounded-lg hover:bg-primary/90"
             >
+              <Plus className="w-4 h-4" />
               {t("providers.addCustomProvider")}
             </button>
           </div>
@@ -940,6 +937,14 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
           </div>
         </div>
       )}
+
+      {/* Custom Provider Dialog */}
+      <CustomProviderDialog
+        isOpen={showCustomProviderDialog}
+        onClose={() => setShowCustomProviderDialog(false)}
+        onConfirm={handleAddCustomProvider}
+        existingProviders={providers.map(p => p.name)}
+      />
     </div>
   );
 }
