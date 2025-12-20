@@ -5,6 +5,7 @@ use crate::services::keychain::KeychainService;
 use std::sync::Arc;
 
 /// Resolved LLM configuration ready for execution
+#[allow(dead_code)]
 #[derive(Debug, Clone)]
 pub struct ResolvedLLMConfig {
     pub provider: Provider,
@@ -16,10 +17,12 @@ pub struct ResolvedLLMConfig {
 
 /// LLM Configuration Resolver
 /// Resolves provider_ref from project config to actual LLM configuration
+#[allow(dead_code)]
 pub struct LLMConfigResolver {
     app_db: Arc<AppDatabase>,
 }
 
+#[allow(dead_code)]
 impl LLMConfigResolver {
     pub fn new(app_db: Arc<AppDatabase>) -> Self {
         Self { app_db }
@@ -139,6 +142,9 @@ impl LLMConfigResolver {
             "openrouter" => Ok(Provider::OpenRouter),
             "ollama" => Ok(Provider::Ollama),
             "azure_openai" => Ok(Provider::AzureOpenAI),
+            "google" => Ok(Provider::Google),
+            "aihubmix" => Ok(Provider::AiHubMix),
+            "github" => Ok(Provider::GitHub),
             _ => Err(format!("Unknown provider: {}", provider_str)),
         }
     }
