@@ -40,7 +40,11 @@ const BUILTIN_PROVIDERS = [
   { id: "github", name: "GitHub Copilot", description: "GitHub Copilot models" },
 ];
 
-export default function LLMProviderManager() {
+interface LLMProviderManagerProps {
+  onSaveStatusChange?: (status: "saved" | "saving" | "unsaved") => void;
+}
+
+export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderManagerProps) {
   const { t } = useTranslation();
   const [providers, setProviders] = useState<LLMProvider[]>([]);
   const [selectedProvider, setSelectedProvider] = useState<string | null>(null);
@@ -48,6 +52,8 @@ export default function LLMProviderManager() {
   const [modelSearchQuery, setModelSearchQuery] = useState("");
   const [loading, setLoading] = useState(true);
   const [saved, setSaved] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | "unsaved">("saved");
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Selected provider details
   const [apiKey, setApiKey] = useState("");
@@ -60,6 +66,30 @@ export default function LLMProviderManager() {
   useEffect(() => {
     loadProviders();
   }, []);
+
+  // Auto-save effect
+  useEffect(() => {
+    if (isInitialLoad) {
+      setIsInitialLoad(false);
+      return;
+    }
+
+    if (saved || !selectedProvider) return;
+
+    const autoSaveTimer = setTimeout(async () => {
+      setSaveStatus("saving");
+      onSaveStatusChange?.("saving");
+      await handleSaveInternal();
+      setSaveStatus("saved");
+      onSaveStatusChange?.("saved");
+      setTimeout(() => {
+        setSaveStatus("saved");
+        onSaveStatusChange?.("saved");
+      }, 2000);
+    }, 1000); // Auto-save 1 second after last change
+
+    return () => clearTimeout(autoSaveTimer);
+  }, [saved, apiKey, providerEnabled, models]);
 
   const loadProviders = async () => {
     try {
@@ -96,9 +126,7 @@ export default function LLMProviderManager() {
 
   const loadProviderDetailsWithData = async (providerName: string, providersList: LLMProvider[]) => {
     try {
-      // Clear models first when loading new provider
-      setModels([]);
-      setSavedEnabledModels([]);
+      console.log("[loadProviderDetailsWithData] Loading provider:", providerName);
 
       // Try to find existing config from the provided list
       const existingConfig = providersList.find(p => p.provider === providerName || p.name === providerName);
@@ -109,28 +137,22 @@ export default function LLMProviderManager() {
           const fullProvider = await invoke<LLMProvider>("get_llm_provider", {
             providerName: existingConfig.name,
           });
+
+          console.log("[loadProviderDetailsWithData] fullProvider:", fullProvider);
+
           setApiKey(fullProvider.api_key || "");
           setProviderEnabled(fullProvider.enabled);
 
-          // Save enabled models to state and display all saved models
-          console.log("[loadProviderDetails] fullProvider.enabled_models:", fullProvider.enabled_models);
+          // Parse and load enabled models
           if (fullProvider.enabled_models) {
             try {
               const enabledModelIds = JSON.parse(fullProvider.enabled_models) as string[];
-              console.log("[loadProviderDetails] enabledModelIds:", enabledModelIds);
-              console.log("[loadProviderDetails] enabledModelIds.length:", enabledModelIds.length);
+              console.log("[loadProviderDetailsWithData] Parsed enabledModelIds:", enabledModelIds);
+
               setSavedEnabledModels(enabledModelIds);
 
-              // If models already exist (e.g., from previous fetch), update them
-              if (models.length > 0) {
-                console.log("[loadProviderDetails] Branch A: updating existing models");
-                setModels(prev => prev.map(m => ({
-                  ...m,
-                  enabled: enabledModelIds.includes(m.id)
-                })));
-              } else if (enabledModelIds.length > 0) {
-                // Display all saved models
-                console.log("[loadProviderDetails] Branch B: creating new model list");
+              // Create model objects from saved IDs
+              if (enabledModelIds.length > 0) {
                 const savedModels = enabledModelIds.map(modelId => ({
                   id: modelId,
                   name: modelId,
@@ -139,32 +161,38 @@ export default function LLMProviderManager() {
                   enabled: true,
                   manual: false,
                 }));
-                console.log("[loadProviderDetails] savedModels:", savedModels);
-                console.log("[loadProviderDetails] savedModels.length:", savedModels.length);
+
+                console.log("[loadProviderDetailsWithData] Setting models:", savedModels);
                 setModels(savedModels);
+              } else {
+                console.log("[loadProviderDetailsWithData] No enabled models, clearing list");
+                setModels([]);
               }
             } catch (e) {
               console.error("Failed to parse enabled_models:", e);
               setSavedEnabledModels([]);
+              setModels([]);
             }
           } else {
+            console.log("[loadProviderDetailsWithData] No enabled_models field");
             setSavedEnabledModels([]);
+            setModels([]);
           }
         } catch (error) {
           console.error("Error loading provider details:", error);
           setApiKey("");
           setProviderEnabled(false);
           setSavedEnabledModels([]);
+          setModels([]);
         }
       } else {
+        console.log("[loadProviderDetailsWithData] No existing config for provider:", providerName);
         // No config yet for this provider - default to disabled
         setApiKey("");
         setProviderEnabled(false);
         setSavedEnabledModels([]);
+        setModels([]);
       }
-
-      // Don't call loadDefaultModels here - it clears models!
-      // Models are already set from saved enabled_models above
     } catch (error) {
       console.error("Failed to load provider details:", error);
     }
@@ -254,7 +282,7 @@ export default function LLMProviderManager() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveInternal = async () => {
     if (!selectedProvider) return;
 
     try {
@@ -266,6 +294,8 @@ export default function LLMProviderManager() {
 
       // Get list of enabled model IDs
       const enabledModelIds = models.filter(m => m.enabled).map(m => m.id);
+
+      console.log("[handleSaveInternal] Saving models:", enabledModelIds);
 
       const input = {
         name: existingProvider?.name || `${selectedBuiltin.id}_default`,
@@ -281,27 +311,30 @@ export default function LLMProviderManager() {
         is_default: false,
       };
 
+      console.log("[handleSaveInternal] Saving input:", input);
+
       if (existingProvider) {
         // Update existing provider
         await invoke("update_llm_provider", {
           providerName: existingProvider.name,
           input,
         });
+        console.log("[handleSaveInternal] Updated existing provider");
       } else {
         // Create new provider
         await invoke("save_llm_provider", { input });
+        console.log("[handleSaveInternal] Created new provider");
       }
 
       // Reload providers list
+      console.log("[handleSaveInternal] Reloading providers...");
       await loadProviders();
-      setSaved(true);
 
-      // Show success message
-      const message = t("providers.saved");
-      alert(message);
+      console.log("[handleSaveInternal] Models after reload:", models);
+
+      setSaved(true);
     } catch (error) {
       console.error("Failed to save:", error);
-      alert(t("providers.saveFailed") + ": " + error);
     }
   };
 
@@ -687,31 +720,6 @@ export default function LLMProviderManager() {
         </div>
       </div>
 
-      {/* Footer */}
-      <div className="border-t border-border px-6 py-3 flex items-center justify-between">
-        <p className="text-xs text-muted-foreground">
-          {saved ? "All changes saved" : "Unsaved changes"}
-        </p>
-        <div className="flex gap-2">
-          <button
-            onClick={() => {
-              if (window.confirm("Close without saving?")) {
-                // Close logic
-              }
-            }}
-            className="px-4 py-2 text-sm font-medium text-foreground bg-secondary rounded hover:bg-secondary/80"
-          >
-            Close
-          </button>
-          <button
-            onClick={handleSave}
-            disabled={saved}
-            className="px-6 py-2 text-sm font-medium text-white bg-primary rounded hover:bg-primary/90 disabled:opacity-50"
-          >
-            Save
-          </button>
-        </div>
-      </div>
     </div>
   );
 }
