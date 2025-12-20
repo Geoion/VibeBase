@@ -59,6 +59,7 @@ pub struct EnvironmentParameters {
     pub max_tokens: Option<u32>,
 }
 
+#[allow(dead_code)]
 impl WorkspaceConfig {
     pub fn get_environment(&self, name: &str) -> Option<&Environment> {
         self.environments.get(name)
