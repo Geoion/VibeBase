@@ -177,7 +177,7 @@
     "cost": "Cost",
     "fill_variables_hint": "Fill in variables and click Run to execute",
     "click_run_hint": "Click Run button to execute Prompt",
-    "arena_mode_hint": "Arena mode enabled: comparing outputs from multiple models",
+    "arena_mode_hint": "Arena mode enabled",
     "single_model_hint": "Single model execution mode",
     "arena_results": "Comparison Results",
     "run_arena": "Run Arena",
@@ -334,6 +334,22 @@
     "workspace": "Workspace",
     "keybindings": "Keybindings",
     "about": "About"
+  },
+  "statistics": {
+    "title": "Arena Statistics",
+    "totalBattles": "Total Battles",
+    "uniqueModels": "Unique Models",
+    "totalModelAppearances": "Total Model Appearances",
+    "modelVotes": "Model Votes",
+    "bestModels": "Best Models",
+    "providerStats": "Provider Statistics",
+    "modelStats": "Model Statistics",
+    "tokens": "Tokens",
+    "avgLatency": "Avg Latency",
+    "cost": "Cost",
+    "noData": "No statistics data",
+    "noVotes": "No vote records",
+    "noWins": "No win records"
   },
   "arena": {
     "title": "Arena Mode",

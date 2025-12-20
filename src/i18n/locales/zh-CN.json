@@ -176,7 +176,7 @@
     "cost": "成本",
     "fill_variables_hint": "填写变量后点击运行按钮执行",
     "click_run_hint": "点击运行按钮执行 Prompt",
-    "arena_mode_hint": "已启用 Arena 模式，将对比多个模型的输出",
+    "arena_mode_hint": "已启用 Arena 模式",
     "single_model_hint": "单模型执行模式",
     "arena_results": "对比结果",
     "run_arena": "运行 Arena 对比",
@@ -334,6 +334,22 @@
     "workspace": "工作区",
     "keybindings": "快捷键",
     "about": "关于"
+  },
+  "statistics": {
+    "title": "Arena 统计",
+    "totalBattles": "总对比次数",
+    "uniqueModels": "总对比模型",
+    "totalModelAppearances": "总对比模型次数",
+    "modelVotes": "模型投票统计",
+    "bestModels": "最佳模型统计",
+    "providerStats": "Provider 统计",
+    "modelStats": "模型统计",
+    "tokens": "Token 使用",
+    "avgLatency": "平均延迟",
+    "cost": "成本",
+    "noData": "暂无统计数据",
+    "noVotes": "暂无投票记录",
+    "noWins": "暂无获胜记录"
   },
   "arena": {
     "title": "Arena 模式",

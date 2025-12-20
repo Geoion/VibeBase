@@ -177,7 +177,7 @@
     "cost": "成本",
     "fill_variables_hint": "填寫變數後點擊執行按鈕執行",
     "click_run_hint": "點擊執行按鈕執行 Prompt",
-    "arena_mode_hint": "已啟用 Arena 模式，將對比多個模型的輸出",
+    "arena_mode_hint": "已啟用 Arena 模式",
     "single_model_hint": "單模型執行模式",
     "arena_results": "對比結果",
     "run_arena": "運行 Arena 對比",
@@ -334,6 +334,22 @@
     "workspace": "工作區",
     "keybindings": "快捷鍵",
     "about": "關於"
+  },
+  "statistics": {
+    "title": "Arena 統計",
+    "totalBattles": "總對比次數",
+    "uniqueModels": "總對比模型",
+    "totalModelAppearances": "總對比模型次數",
+    "modelVotes": "模型投票統計",
+    "bestModels": "最佳模型統計",
+    "providerStats": "Provider 統計",
+    "modelStats": "模型統計",
+    "tokens": "Token 使用",
+    "avgLatency": "平均延遲",
+    "cost": "成本",
+    "noData": "暫無統計資料",
+    "noVotes": "暫無投票記錄",
+    "noWins": "暫無獲勝記錄"
   },
   "arena": {
     "title": "Arena 模式",
