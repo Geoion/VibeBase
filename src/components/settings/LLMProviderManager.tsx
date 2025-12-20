@@ -471,7 +471,11 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     setSaved(false);
   };
 
-  const filteredProviders = BUILTIN_PROVIDERS.filter((p) =>
+  const filteredBuiltinProviders = BUILTIN_PROVIDERS.filter((p) =>
+    p.name.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const filteredCustomProviders = customProviders.filter((p) =>
     p.name.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
