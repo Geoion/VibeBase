@@ -4,17 +4,11 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { open } from "@tauri-apps/api/shell";
 import {
   Info,
-  Github,
-  Twitter,
-  Globe,
   Download,
   CheckCircle,
   AlertCircle,
   RefreshCw,
   ExternalLink,
-  BookOpen,
-  Mail,
-  Heart,
 } from "lucide-react";
 
 interface VersionInfo {
@@ -104,7 +98,7 @@ export default function AboutPanel() {
   };
 
   return (
-    <div className="p-8 max-w-4xl mx-auto space-y-8">
+    <div className="flex-1 overflow-auto p-8 max-w-4xl mx-auto w-full space-y-8">
       {/* Header */}
       <div className="text-center space-y-4">
         <div className="flex justify-center">
@@ -195,79 +189,6 @@ export default function AboutPanel() {
         )}
       </div>
 
-      {/* Author & Links */}
-      <div className="border border-border rounded-lg p-6 space-y-4">
-        <h3 className="text-lg font-semibold mb-4">{t("about.about")}</h3>
-
-        <div className="space-y-3">
-          <div className="flex items-center gap-3 text-sm">
-            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Heart className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="font-medium">{t("about.madeWith")}</p>
-              <p className="text-muted-foreground">{t("about.madeByTeam")}</p>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 text-sm">
-            <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
-              <Mail className="w-4 h-4 text-primary" />
-            </div>
-            <div>
-              <p className="font-medium">{t("about.contact")}</p>
-              <button
-                onClick={() => handleOpenLink("mailto:contact@vibebase.dev")}
-                className="text-muted-foreground hover:text-primary transition-colors"
-              >
-                contact@vibebase.dev
-              </button>
-            </div>
-          </div>
-
-          <div className="pt-3 border-t border-border">
-            <p className="text-sm font-medium mb-3">{t("about.links")}</p>
-            <div className="grid grid-cols-2 gap-2">
-              <button
-                onClick={() => handleOpenLink("https://github.com/vibebase/vibebase")}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
-              >
-                <Github className="w-4 h-4" />
-                <span className="text-sm">GitHub</span>
-                <ExternalLink className="w-3 h-3 ml-auto" />
-              </button>
-
-              <button
-                onClick={() => handleOpenLink("https://vibebase.dev")}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
-              >
-                <Globe className="w-4 h-4" />
-                <span className="text-sm">{t("about.website")}</span>
-                <ExternalLink className="w-3 h-3 ml-auto" />
-              </button>
-
-              <button
-                onClick={() => handleOpenLink("https://twitter.com/vibebase")}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
-              >
-                <Twitter className="w-4 h-4" />
-                <span className="text-sm">Twitter</span>
-                <ExternalLink className="w-3 h-3 ml-auto" />
-              </button>
-
-              <button
-                onClick={() => handleOpenLink("https://docs.vibebase.dev")}
-                className="flex items-center gap-2 px-3 py-2 rounded-lg bg-secondary hover:bg-secondary/80 transition-colors"
-              >
-                <BookOpen className="w-4 h-4" />
-                <span className="text-sm">{t("about.docs")}</span>
-                <ExternalLink className="w-3 h-3 ml-auto" />
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-
       {/* Changelog */}
       <div className="border border-border rounded-lg p-6 space-y-4">
         <h3 className="text-lg font-semibold mb-4">{t("about.changelog")}</h3>
@@ -350,16 +271,6 @@ export default function AboutPanel() {
             </div>
           ))}
         </div>
-      </div>
-
-      {/* License & Credits */}
-      <div className="text-center text-sm text-muted-foreground space-y-2">
-        <p>
-          {t("about.license")} • {t("about.openSource")}
-        </p>
-        <p>
-          {t("about.copyright")} © 2025 VibeBase Team. {t("about.allRightsReserved")}
-        </p>
       </div>
     </div>
   );
