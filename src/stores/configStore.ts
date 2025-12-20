@@ -1,16 +1,20 @@
 import { create } from "zustand";
 
+/**
+ * @deprecated This store is no longer used in v2.0 architecture.
+ * LLM Providers are now managed directly through the global app database,
+ * and selected per-execution in the ExecutionPanel.
+ * 
+ * Keeping this file for backward compatibility with existing code.
+ * Will be removed in future versions.
+ */
+
 export interface Environment {
   name?: string;
-
-  // v2.0: Use provider_ref to reference global LLM configuration
   provider_ref?: string;
-
-  // Legacy fields (for backward compatibility)
   provider?: string;
   model?: string;
   api_key_env_var?: string;
-
   base_url?: string;
   parameters?: {
     temperature?: number;
@@ -42,15 +46,19 @@ interface ConfigStore {
 export const useConfigStore = create<ConfigStore>((set) => ({
   config: null,
   currentEnvironment: null,
-
-  setConfig: (config) => {
-    // Auto-select first environment
-    const firstEnv = config ? Object.keys(config.environments)[0] : null;
-    set({ config, currentEnvironment: firstEnv });
-  },
-
+  setConfig: (config) => set({ config }),
   setCurrentEnvironment: (env) => set({ currentEnvironment: env }),
 }));
+
+
+
+
+
+
+
+
+
+
 
 
 
