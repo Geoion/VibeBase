@@ -27,7 +27,8 @@
     "rename": "重新命名",
     "clearSearch": "清除搜尋",
     "minimize": "最小化",
-    "maximize": "最大化"
+    "maximize": "最大化",
+    "confirm": "確認"
   },
   "rename": {
     "rename_file": "重新命名檔案",
@@ -251,6 +252,9 @@
     "active": "啟用",
     "inactive": "未啟用",
     "testConnection": "測試連線",
+    "testSuccess": "連線成功",
+    "testFailed": "連線失敗",
+    "testNoApiKey": "請先輸入 API 金鑰",
     "apiKey": "API 金鑰",
     "apiKeyPlaceholder": "••••••••••••••••••••••••••••",
     "getApiKeyFrom": "從 {{provider}} Keys 取得您的 API 金鑰",
@@ -258,7 +262,9 @@
     "fetch": "取得",
     "fetching": "取得中...",
     "searchModels": "搜尋模型...",
+    "selectModels": "選擇模型",
     "noModelsAvailable": "無可用模型",
+    "noModelsFound": "未找到符合的模型",
     "showingModels": "顯示 {{count}} 個模型（已啟用的優先）",
     "manual": "手動",
     "importSettings": "匯入設定",
@@ -339,6 +345,8 @@
     "selectBattle": "選擇一條記錄查看詳情",
     "models": "個模型",
     "waitingResponse": "等待 Provider 回應...",
+    "executionFailed": "執行失敗",
+    "retry": "重試",
     "promptPreview": "Prompt 預覽",
     "showMore": "展開",
     "showLess": "折疊",

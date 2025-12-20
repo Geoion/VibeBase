@@ -27,7 +27,8 @@
     "rename": "Rename",
     "clearSearch": "Clear Search",
     "minimize": "Minimize",
-    "maximize": "Maximize"
+    "maximize": "Maximize",
+    "confirm": "Confirm"
   },
   "rename": {
     "rename_file": "Rename File",
@@ -251,6 +252,9 @@
     "active": "Active",
     "inactive": "Inactive",
     "testConnection": "Test connection",
+    "testSuccess": "Connection Successful",
+    "testFailed": "Connection Failed",
+    "testNoApiKey": "Please enter an API Key first",
     "apiKey": "API Key",
     "apiKeyPlaceholder": "••••••••••••••••••••••••••••",
     "getApiKeyFrom": "Get your API key from {{provider}} Keys",
@@ -258,7 +262,9 @@
     "fetch": "Fetch",
     "fetching": "Fetching...",
     "searchModels": "Search models...",
+    "selectModels": "Select Models",
     "noModelsAvailable": "No models available",
+    "noModelsFound": "No models found",
     "showingModels": "Showing {{count}} models (enabled first)",
     "manual": "Manual",
     "importSettings": "Import Settings",
@@ -339,6 +345,8 @@
     "selectBattle": "Select a record to view details",
     "models": "models",
     "waitingResponse": "Waiting for Provider response...",
+    "executionFailed": "Execution Failed",
+    "retry": "Retry",
     "promptPreview": "Prompt Preview",
     "showMore": "Expand",
     "showLess": "Collapse",
