@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
+import { invoke } from "@tauri-apps/api/tauri";
 import "./styles/index.css";
 import "./i18n/config";
 import VariablesManager from "./components/variables/VariablesManager";
@@ -45,18 +46,51 @@ function VariablesWindow() {
   }, [theme]);
 
   useEffect(() => {
-    // Apply theme to document
-    const root = document.documentElement;
-    root.classList.remove("light", "dark");
+    const updateTheme = async () => {
+      const root = document.documentElement;
+      root.classList.remove("light", "dark");
 
-    if (theme === "system") {
-      const systemTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
-        ? "dark"
-        : "light";
+      let effectiveTheme: string;
+      if (theme === "system") {
+        try {
+          effectiveTheme = await invoke<string>("get_system_theme");
+        } catch (error) {
+          console.error("Failed to get system theme:", error);
+          const isDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+          effectiveTheme = isDark ? "dark" : "light";
+        }
+        root.classList.add(effectiveTheme);
+      } else {
+        effectiveTheme = theme;
+        root.classList.add(theme);
+      }
+
+      invoke("set_window_theme", { theme: effectiveTheme }).catch((error) => {
+        console.error("Failed to set window theme:", error);
+      });
+    };
+
+    updateTheme();
+  }, [theme]);
+
+  // Listen for system theme changes
+  useEffect(() => {
+    if (theme !== "system") return;
+
+    const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (e: MediaQueryListEvent) => {
+      const root = document.documentElement;
+      root.classList.remove("light", "dark");
+      const systemTheme = e.matches ? "dark" : "light";
       root.classList.add(systemTheme);
-    } else {
-      root.classList.add(theme);
-    }
+
+      invoke("set_window_theme", { theme: systemTheme }).catch((error) => {
+        console.error("Failed to set window theme:", error);
+      });
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
   const handleClose = () => {
