@@ -1,6 +1,5 @@
 use crate::models::prompt::parse_markdown_prompt;
-use crate::services::database::{ProjectDatabase, PromptFileMetadata};
-use crate::services::file_tracker::FileTracker;
+use crate::services::database::ProjectDatabase;
 use serde::{Deserialize, Serialize};
 use sha2::{Sha256, Digest};
 use std::fs;
@@ -312,4 +311,12 @@ impl FileValidator {
 
 // Note: Integration tests for FileValidator require database setup
 // See tests/ directory for integration tests
+
+
+
+
+
+
+
+
 
