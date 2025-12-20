@@ -4510,9 +4510,11 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "cocoa",
  "dirs-next",
  "futures",
  "keyring",
+ "objc",
  "pulldown-cmark",
  "regex",
  "reqwest",
