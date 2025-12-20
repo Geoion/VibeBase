@@ -366,11 +366,17 @@ export default function ExecutionPanel({
 
     try {
       const modelsArray = Array.from(resultsMap.keys());
-      const outputsArray = Array.from(resultsMap.entries()).map(([modelId, result]) => ({
-        model: modelId,
-        output: result.output,
-        metadata: result.metadata,
-      }));
+      const outputsArray = Array.from(resultsMap.entries()).map(([modelId, result]) => {
+        const model = enabledModels.find(m => m.id === modelId);
+        return {
+          model_id: modelId,  // 原始 ID（用于内部引用）
+          provider_name: model?.provider_name || result.metadata.provider,  // Provider 显示名称
+          model_name: model?.model_name || result.metadata.model,  // 模型显示名称
+          provider_type: model?.provider_type || result.metadata.provider,  // Provider 类型
+          output: result.output,
+          metadata: result.metadata,
+        };
+      });
 
       await invoke("save_arena_battle", {
         workspacePath: workspace.path,
@@ -392,7 +398,7 @@ export default function ExecutionPanel({
     variables.every((v) => variableValues[v]) &&
     selectedModels.size > 0;
 
-  const isArenaMode = selectedModels.size > 1;
+  const isArenaMode = selectedModels.size >= 1;
 
   return (
     <div className="h-full flex flex-col">
