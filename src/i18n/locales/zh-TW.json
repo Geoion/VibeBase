@@ -30,6 +30,9 @@
     "maximize": "最大化",
     "confirm": "確認"
   },
+  "common": {
+    "featureComingSoon": "此功能即將更新，敬請期待！"
+  },
   "rename": {
     "rename_file": "重新命名檔案",
     "rename_folder": "重新命名資料夾",

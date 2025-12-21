@@ -30,6 +30,9 @@
     "maximize": "最大化",
     "confirm": "确认"
   },
+  "common": {
+    "featureComingSoon": "此功能即将更新，敬请期待！"
+  },
   "rename": {
     "rename_file": "重命名文件",
     "rename_folder": "重命名文件夹",

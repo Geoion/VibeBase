@@ -30,6 +30,9 @@
     "maximize": "Maximize",
     "confirm": "Confirm"
   },
+  "common": {
+    "featureComingSoon": "This feature is coming soon!"
+  },
   "rename": {
     "rename_file": "Rename File",
     "rename_folder": "Rename Folder",
