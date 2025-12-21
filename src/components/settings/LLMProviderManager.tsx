@@ -393,7 +393,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
       const selectedBuiltin = BUILTIN_PROVIDERS.find(p => p.id === selectedProvider);
       const selectedCustom = customProviders.find(p => p.id === selectedProvider);
 
-      // 对于自定义 Provider，使用 openai 类型进行测试
+      // For custom Provider, use openai type for testing
       const providerType = selectedBuiltin ? selectedBuiltin.id : "openai";
       const baseUrl = selectedCustom ? selectedProviderConfig?.base_url : undefined;
 
@@ -454,8 +454,8 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     try {
       const input = {
         name: providerData.name,
-        provider: providerData.name,  // 使用 name 作为 provider type
-        model: "",  // 默认为空，用户可以后续添加
+        provider: providerData.name,  // Use name as provider type
+        model: "",  // Default empty, user can add later
         base_url: providerData.baseUrl,
         api_key: "",
         api_key_source: "direct",
@@ -465,7 +465,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
       await invoke("save_llm_provider", { input });
 
-      // 重新加载 Provider 列表并选中新添加的
+      // Reload Provider list and select newly added one
       await loadProviders();
       setSelectedProvider(providerData.name);
     } catch (error) {
