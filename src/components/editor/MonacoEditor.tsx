@@ -33,7 +33,7 @@ export default function MonacoEditor({
     return theme as "light" | "dark";
   };
 
-  // 使用 state 存储当前有效主题，确保响应式更新
+  // Use state to store current effective theme for reactive updates
   const [effectiveTheme, setEffectiveTheme] = useState<"light" | "dark">(getEffectiveTheme);
 
   // Determine Monaco theme based on effective theme
@@ -41,13 +41,13 @@ export default function MonacoEditor({
     return effectiveTheme === "dark" ? "vs-dark" : "vs";
   };
 
-  // 监听主题变化，更新有效主题状态
+  // Listen for theme changes and update effective theme state
   useEffect(() => {
     const newEffectiveTheme = getEffectiveTheme();
     setEffectiveTheme(newEffectiveTheme);
   }, [theme]);
 
-  // 监听系统主题变化（当应用主题设置为 "system" 时）
+  // Listen for system theme changes (when app theme is set to "system")
   useEffect(() => {
     if (theme !== "system") return;
 
@@ -61,7 +61,7 @@ export default function MonacoEditor({
     return () => mediaQuery.removeEventListener("change", handleSystemThemeChange);
   }, [theme]);
 
-  // 当有效主题改变时，更新 Monaco 编辑器
+  // Update Monaco editor when effective theme changes
   useEffect(() => {
     if (editorRef.current && monacoRef.current) {
       const monacoTheme = getMonacoTheme();
@@ -76,7 +76,7 @@ export default function MonacoEditor({
     }
   }, [value]);
 
-  // 清理组件卸载时的装饰器
+  // Clean up decorations when component unmounts
   useEffect(() => {
     return () => {
       if (editorRef.current) {
@@ -114,7 +114,7 @@ export default function MonacoEditor({
       colors: {},
     });
 
-    // 立即应用正确的主题（修复首次加载时主题不同步的问题）
+    // Apply correct theme immediately (fixes theme desync on first load)
     const monacoTheme = getMonacoTheme();
     editor.updateOptions({ theme: monacoTheme });
 
@@ -124,15 +124,15 @@ export default function MonacoEditor({
       completionProviderRegistered = true;
     }
 
-    // 监听内容变化，在 {{ }} 内部时自动触发补全
+    // Listen for content changes and auto-trigger completion when inside {{ }}
     let triggerTimeout: NodeJS.Timeout | null = null;
     editor.onDidChangeModelContent((e) => {
-      // 清除之前的定时器
+      // Clear previous timer
       if (triggerTimeout) {
         clearTimeout(triggerTimeout);
       }
 
-      // 只在用户输入（非程序化修改）时触发
+      // Only trigger on user input (non-programmatic changes)
       if (!e.isFlush && e.changes.length > 0) {
         const position = editor.getPosition();
         if (!position) return;
@@ -145,7 +145,7 @@ export default function MonacoEditor({
         const lastOpenBrace = textBeforeCursor.lastIndexOf('{{');
         const lastCloseBrace = textBeforeCursor.lastIndexOf('}}');
 
-        // 如果光标在 {{ }} 内部，延迟触发补全（防抖）
+        // If cursor is inside {{ }}, trigger completion with delay (debounce)
         if (lastOpenBrace !== -1 && (lastCloseBrace === -1 || lastCloseBrace < lastOpenBrace)) {
           triggerTimeout = setTimeout(() => {
             editor.trigger('keyboard', 'editor.action.triggerSuggest', {});
@@ -163,7 +163,7 @@ export default function MonacoEditor({
 
     languages.forEach((language) => {
       monaco.languages.registerCompletionItemProvider(language, {
-        // 扩展触发字符，包括所有字母和数字
+        // Extended trigger characters including all letters and numbers
         triggerCharacters: [
           "{", "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m",
           "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z", "_",
@@ -176,33 +176,33 @@ export default function MonacoEditor({
           const textBeforeCursor = lineContent.substring(0, position.column - 1);
           const textAfterCursor = lineContent.substring(position.column - 1);
 
-          // 检查光标是否在 {{ }} 内部
-          // 查找最后一个 {{ 的位置
+          // Check if cursor is inside {{ }}
+          // Find the position of the last {{
           const lastOpenBrace = textBeforeCursor.lastIndexOf('{{');
           const lastCloseBrace = textBeforeCursor.lastIndexOf('}}');
 
-          // 如果最后一个 {{ 在最后一个 }} 之后（或没有 }}），说明我们在 {{ 内部
+          // If the last {{ is after the last }} (or there's no }}), we're inside {{
           if (lastOpenBrace === -1 || (lastCloseBrace !== -1 && lastCloseBrace > lastOpenBrace)) {
             return { suggestions: [] };
           }
 
-          // 提取 {{ 和光标之间的内容
+          // Extract content between {{ and cursor
           const partialInput = textBeforeCursor.substring(lastOpenBrace + 2);
 
-          // 检查光标后面是否有 }}
+          // Check if there's }} after cursor
           const hasClosingBraces = textAfterCursor.match(/^\s*\}\}/);
 
-          // 查找光标后面到 }} 之间的内容（用于计算替换范围）
+          // Find content from cursor to }} (for calculating replacement range)
           const afterMatch = textAfterCursor.match(/^([a-zA-Z0-9_]*)/);
           const textToReplace = afterMatch ? afterMatch[1] : '';
 
           try {
-            // 获取全局变量
+            // Get global variables
             const variables = await invoke<Array<{ id: string; key: string; value: string }>>(
               "list_global_variables"
             );
 
-            // 根据输入过滤变量
+            // Filter variables based on input
             const filteredVariables = variables.filter((v) =>
               v.key.toLowerCase().includes(partialInput.toLowerCase())
             );
