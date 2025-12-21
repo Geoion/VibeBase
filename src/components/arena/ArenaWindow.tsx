@@ -107,7 +107,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
         setWorkspacePath(context.workspacePath);
         setSelectedModels(new Set(context.selectedModels || []));
 
-        // 读取文件内容用于预览
+        // Read file content for preview
         if (context.filePath) {
           try {
             const content = await invoke<string>("read_prompt", {
