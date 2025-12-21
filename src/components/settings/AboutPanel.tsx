@@ -27,8 +27,9 @@ export default function AboutPanel() {
   const [updateInfo, setUpdateInfo] = useState<VersionInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [version, setVersion] = useState("0.1.0");
+  const [isInstalling, setIsInstalling] = useState(false);
 
-  // 获取应用版本号
+  // Get application version
   const loadVersion = async () => {
     try {
       const ver = await invoke<string>("get_app_version");
@@ -38,7 +39,7 @@ export default function AboutPanel() {
     }
   };
 
-  // 组件加载时获取版本号
+  // Load version on component mount
   useEffect(() => {
     loadVersion();
   }, []);
@@ -54,6 +55,19 @@ export default function AboutPanel() {
       setError(err.message || t("about.checkUpdateFailed"));
     } finally {
       setChecking(false);
+    }
+  };
+
+  const handleInstallUpdate = async () => {
+    setIsInstalling(true);
+    setError(null);
+
+    try {
+      await invoke("install_update");
+      // Update will install and app will restart automatically
+    } catch (err: any) {
+      setError(err.message || "Failed to install update");
+      setIsInstalling(false);
     }
   };
 
@@ -107,13 +121,28 @@ export default function AboutPanel() {
                     <p className="text-sm text-muted-foreground mb-2">
                       {t("about.newVersion")}: {updateInfo.latest_version}
                     </p>
-                    <button
-                      onClick={() => handleOpenLink(updateInfo.download_url)}
-                      className="flex items-center gap-2 text-sm text-blue-500 hover:underline"
-                    >
-                      <span>{t("about.downloadUpdate")}</span>
-                      <ExternalLink className="w-3 h-3" />
-                    </button>
+                    {updateInfo.release_notes && (
+                      <p className="text-sm text-muted-foreground mb-3">
+                        {updateInfo.release_notes}
+                      </p>
+                    )}
+                    <div className="flex gap-2">
+                      <button
+                        onClick={handleInstallUpdate}
+                        disabled={isInstalling}
+                        className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>{isInstalling ? "Installing..." : "Install & Restart"}</span>
+                      </button>
+                      <button
+                        onClick={() => handleOpenLink(updateInfo.download_url)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm text-blue-500 border border-blue-500 rounded-lg hover:bg-blue-500/10 transition-colors"
+                      >
+                        <span>Manual Download</span>
+                        <ExternalLink className="w-3 h-3" />
+                      </button>
+                    </div>
                   </div>
                 </>
               ) : (
