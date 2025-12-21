@@ -625,386 +625,384 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                 )}
               </>
             )}
-          </>
-            )}
+          </div>
+        </div>
+
+        {/* Right Column - Provider Details */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          {selectedBuiltinProvider || isCustomProvider ? (
+            <>
+              {/* Provider Header */}
+              <div className="px-6 py-4 border-b border-border">
+                <div className="flex items-start justify-between">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="flex-1 min-w-0">
+                      <h3 className="text-lg font-semibold text-foreground">
+                        {isCustomProvider ? selectedCustomProvider?.name : selectedBuiltinProvider?.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-0.5">
+                        {isCustomProvider ? selectedCustomProvider?.description : selectedBuiltinProvider?.description}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-shrink-0">
+                    {isProviderConfigured && providerEnabled ? (
+                      <span className="px-3 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
+                        {t("providers.active")}
+                      </span>
+                    ) : (
+                      <span className="px-3 py-1 text-xs font-medium bg-muted text-muted-foreground rounded-full">
+                        {t("providers.inactive")}
+                      </span>
+                    )}
+                    <button
+                      onClick={handleTestConnection}
+                      disabled={testingConnection}
+                      className="p-2 hover:bg-accent rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title={t("providers.testConnection")}
+                    >
+                      {testingConnection ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Zap className="w-4 h-4" />
+                      )}
+                    </button>
+                    <button
+                      onClick={handleToggleProviderEnabled}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${providerEnabled ? "bg-primary" : "bg-muted-foreground/20"
+                        }`}
+                      title={providerEnabled ? "Disable provider" : "Enable provider"}
+                    >
+                      <span
+                        className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${providerEnabled ? "translate-x-6" : "translate-x-0.5"
+                          }`}
+                      />
+                    </button>
+                    <button
+                      onClick={handleDeleteProvider}
+                      className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
+                      title="Delete configuration"
+                    >
+                      <Trash2 className="w-4 h-4 text-destructive" />
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Provider Details Content */}
+              <div className="flex-1 overflow-auto p-6 space-y-6">
+                {/* API Key Section */}
+                <div>
+                  <label className="block text-sm font-medium text-foreground mb-2">
+                    {t("providers.apiKey")}
+                  </label>
+                  <div className="relative">
+                    <input
+                      type={showApiKey ? "text" : "password"}
+                      value={apiKey}
+                      onChange={(e) => {
+                        setApiKey(e.target.value);
+                        setSaved(false);
+                      }}
+                      placeholder={t("providers.apiKeyPlaceholder")}
+                      className="w-full px-3 py-2 pr-10 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                    <button
+                      onClick={() => setShowApiKey(!showApiKey)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showApiKey ? (
+                        <EyeOff className="w-4 h-4" />
+                      ) : (
+                        <Eye className="w-4 h-4" />
+                      )}
+                    </button>
+                  </div>
+                  {!isCustomProvider && selectedBuiltinProvider && (
+                    <p className="mt-1.5 text-xs text-muted-foreground">
+                      Get your API key from{" "}
+                      <a
+                        href={`https://${selectedBuiltinProvider?.id === "openrouter" ? "openrouter.ai" : (selectedBuiltinProvider?.id || "example") + ".com"}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-primary hover:underline"
+                      >
+                        {selectedBuiltinProvider?.name} Keys →
+                      </a>
+                    </p>
+                  )}
+                </div>
+
+                {/* Models Section */}
+                <div>
+                  <div className="flex items-center justify-between mb-3">
+                    <label className="block text-sm font-medium text-foreground">
+                      {t("providers.models")}
+                    </label>
+                    <button
+                      onClick={handleOpenModelDialog}
+                      disabled={fetchingModels}
+                      className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50"
+                    >
+                      {fetchingModels ? t("providers.fetching") : t("providers.fetch")}
+                    </button>
+                  </div>
+
+                  {/* Model Search */}
+                  <div className="relative mb-3">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                    <input
+                      type="text"
+                      value={modelSearchQuery}
+                      onChange={(e) => setModelSearchQuery(e.target.value)}
+                      placeholder={t("providers.searchModels")}
+                      className="w-full pl-9 pr-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                    />
+                  </div>
+
+                  {/* Selected Models List */}
+                  <div className="space-y-2">
+                    {filteredModels.length === 0 ? (
+                      <div className="text-center py-8">
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {modelSearchQuery
+                            ? t("providers.noModelsFound", "未找到匹配的模型")
+                            : "尚未选择模型"}
+                        </p>
+                        {!modelSearchQuery && (
+                          <p className="text-xs text-muted-foreground">
+                            点击上方 <strong>Fetch</strong> 按钮选择模型
+                          </p>
+                        )}
+                      </div>
+                    ) : (
+                      <>
+                        <div className="flex items-center justify-between text-xs mb-3">
+                          <span className="text-muted-foreground">
+                            {modelSearchQuery
+                              ? `显示 ${filteredModels.length} / ${models.length} 个模型`
+                              : `已选择 ${models.length} 个模型`}
+                          </span>
+                        </div>
+                        {filteredModels.map((model) => (
+                          <div
+                            key={model.id}
+                            className={`flex items-center gap-3 p-3 rounded-lg ${!providerEnabled
+                              ? "bg-muted/30 opacity-60"
+                              : "bg-accent/50"
+                              }`}
+                          >
+                            <div className="flex-1 min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-sm font-medium text-foreground">
+                                  {model.displayName}
+                                </span>
+                                {!providerEnabled && (
+                                  <span className="px-1.5 py-0.5 text-xs bg-destructive/20 text-destructive rounded">
+                                    Provider Disabled
+                                  </span>
+                                )}
+                              </div>
+                              <p className="text-xs text-muted-foreground truncate">
+                                {model.modelPath}
+                              </p>
+                            </div>
+                            <button
+                              onClick={() => handleDeleteModel(model.id)}
+                              disabled={!providerEnabled}
+                              className="p-1.5 hover:bg-destructive/10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                              title="移除模型"
+                            >
+                              <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
+                            </button>
+                          </div>
+                        ))}
+                      </>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="flex-1 flex items-center justify-center">
+              <p className="text-sm text-muted-foreground">
+                {t("providers.selectProvider")}
+              </p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* Right Column - Provider Details */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {selectedBuiltinProvider || isCustomProvider ? (
-          <>
-            {/* Provider Header */}
-            <div className="px-6 py-4 border-b border-border">
-              <div className="flex items-start justify-between">
-                <div className="flex items-center gap-3 flex-1">
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-lg font-semibold text-foreground">
-                      {isCustomProvider ? selectedCustomProvider?.name : selectedBuiltinProvider.name}
-                    </h3>
-                    <p className="text-sm text-muted-foreground mt-0.5">
-                      {isCustomProvider ? selectedCustomProvider?.description : selectedBuiltinProvider.description}
-                    </p>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {isProviderConfigured && providerEnabled ? (
-                    <span className="px-3 py-1 text-xs font-medium bg-primary/10 text-primary rounded-full">
-                      {t("providers.active")}
-                    </span>
-                  ) : (
-                    <span className="px-3 py-1 text-xs font-medium bg-muted text-muted-foreground rounded-full">
-                      {t("providers.inactive")}
-                    </span>
-                  )}
-                  <button
-                    onClick={handleTestConnection}
-                    disabled={testingConnection}
-                    className="p-2 hover:bg-accent rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={t("providers.testConnection")}
-                  >
-                    {testingConnection ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Zap className="w-4 h-4" />
-                    )}
-                  </button>
-                  <button
-                    onClick={handleToggleProviderEnabled}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${providerEnabled ? "bg-primary" : "bg-muted-foreground/20"
-                      }`}
-                    title={providerEnabled ? "Disable provider" : "Enable provider"}
-                  >
-                    <span
-                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${providerEnabled ? "translate-x-6" : "translate-x-0.5"
-                        }`}
-                    />
-                  </button>
-                  <button
-                    onClick={handleDeleteProvider}
-                    className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
-                    title="Delete configuration"
-                  >
-                    <Trash2 className="w-4 h-4 text-destructive" />
-                  </button>
-                </div>
+      {/* Model Selection Dialog */}
+      {
+        showModelDialog && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="w-[700px] max-h-[80vh] bg-card border border-border rounded-lg shadow-xl flex flex-col">
+              {/* Dialog Header */}
+              <div className="px-6 py-4 border-b border-border">
+                <h3 className="text-lg font-semibold">{t("providers.selectModels", "选择模型")}</h3>
+                <p className="text-sm text-muted-foreground mt-1">
+                  从 {availableModels.length} 个可用模型中选择
+                </p>
               </div>
-            </div>
 
-            {/* Provider Details Content */}
-            <div className="flex-1 overflow-auto p-6 space-y-6">
-              {/* API Key Section */}
-              <div>
-                <label className="block text-sm font-medium text-foreground mb-2">
-                  {t("providers.apiKey")}
-                </label>
+              {/* Search */}
+              <div className="px-6 py-3 border-b border-border">
                 <div className="relative">
-                  <input
-                    type={showApiKey ? "text" : "password"}
-                    value={apiKey}
-                    onChange={(e) => {
-                      setApiKey(e.target.value);
-                      setSaved(false);
-                    }}
-                    placeholder={t("providers.apiKeyPlaceholder")}
-                    className="w-full px-3 py-2 pr-10 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                  <button
-                    onClick={() => setShowApiKey(!showApiKey)}
-                    className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                  >
-                    {showApiKey ? (
-                      <EyeOff className="w-4 h-4" />
-                    ) : (
-                      <Eye className="w-4 h-4" />
-                    )}
-                  </button>
-                </div>
-                {!isCustomProvider && selectedBuiltinProvider && (
-                  <p className="mt-1.5 text-xs text-muted-foreground">
-                    Get your API key from{" "}
-                    <a
-                      href={`https://${selectedBuiltinProvider.id === "openrouter" ? "openrouter.ai" : selectedBuiltinProvider.id + ".com"}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-primary hover:underline"
-                    >
-                      {selectedBuiltinProvider.name} Keys →
-                    </a>
-                  </p>
-                )}
-              </div>
-
-              {/* Models Section */}
-              <div>
-                <div className="flex items-center justify-between mb-3">
-                  <label className="block text-sm font-medium text-foreground">
-                    {t("providers.models")}
-                  </label>
-                  <button
-                    onClick={handleOpenModelDialog}
-                    disabled={fetchingModels}
-                    className="px-3 py-1.5 text-xs font-medium bg-primary text-primary-foreground rounded hover:bg-primary/90 disabled:opacity-50"
-                  >
-                    {fetchingModels ? t("providers.fetching") : t("providers.fetch")}
-                  </button>
-                </div>
-
-                {/* Model Search */}
-                <div className="relative mb-3">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                   <input
                     type="text"
-                    value={modelSearchQuery}
-                    onChange={(e) => setModelSearchQuery(e.target.value)}
+                    value={dialogSearchQuery}
+                    onChange={(e) => setDialogSearchQuery(e.target.value)}
                     placeholder={t("providers.searchModels")}
                     className="w-full pl-9 pr-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                   />
                 </div>
+              </div>
 
-                {/* Selected Models List */}
+              {/* Models List */}
+              <div className="flex-1 overflow-auto px-6 py-4">
                 <div className="space-y-2">
-                  {filteredModels.length === 0 ? (
-                    <div className="text-center py-8">
-                      <p className="text-sm text-muted-foreground mb-2">
-                        {modelSearchQuery
-                          ? t("providers.noModelsFound", "未找到匹配的模型")
-                          : "尚未选择模型"}
-                      </p>
-                      {!modelSearchQuery && (
-                        <p className="text-xs text-muted-foreground">
-                          点击上方 <strong>Fetch</strong> 按钮选择模型
-                        </p>
-                      )}
-                    </div>
+                  {filteredDialogModels.length === 0 ? (
+                    <p className="text-sm text-muted-foreground text-center py-8">
+                      {dialogSearchQuery
+                        ? t("providers.noModelsFound", "未找到匹配的模型")
+                        : "没有可用的模型"}
+                    </p>
                   ) : (
-                    <>
-                      <div className="flex items-center justify-between text-xs mb-3">
-                        <span className="text-muted-foreground">
-                          {modelSearchQuery
-                            ? `显示 ${filteredModels.length} / ${models.length} 个模型`
-                            : `已选择 ${models.length} 个模型`}
-                        </span>
-                      </div>
-                      {filteredModels.map((model) => (
-                        <div
+                    filteredDialogModels.map((model) => {
+                      const isSelected = selectedModelsInDialog.has(model.id);
+                      return (
+                        <button
                           key={model.id}
-                          className={`flex items-center gap-3 p-3 rounded-lg ${!providerEnabled
-                            ? "bg-muted/30 opacity-60"
-                            : "bg-accent/50"
+                          onClick={() => handleToggleModelInDialog(model.id)}
+                          className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${isSelected
+                            ? "bg-primary/10 border border-primary"
+                            : "bg-accent/50 hover:bg-accent border border-transparent"
                             }`}
                         >
                           <div className="flex-1 min-w-0">
-                            <div className="flex items-center gap-2 mb-1">
-                              <span className="text-sm font-medium text-foreground">
-                                {model.displayName}
-                              </span>
-                              {!providerEnabled && (
-                                <span className="px-1.5 py-0.5 text-xs bg-destructive/20 text-destructive rounded">
-                                  Provider Disabled
-                                </span>
-                              )}
+                            <div className="text-sm font-medium text-foreground mb-1">
+                              {model.displayName}
                             </div>
                             <p className="text-xs text-muted-foreground truncate">
                               {model.modelPath}
                             </p>
                           </div>
-                          <button
-                            onClick={() => handleDeleteModel(model.id)}
-                            disabled={!providerEnabled}
-                            className="p-1.5 hover:bg-destructive/10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                            title="移除模型"
+                          <div
+                            className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${isSelected
+                              ? "bg-primary border-primary"
+                              : "border-muted-foreground/30"
+                              }`}
                           >
-                            <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
-                          </button>
-                        </div>
-                      ))}
-                    </>
+                            {isSelected && (
+                              <svg
+                                className="w-3 h-3 text-primary-foreground"
+                                fill="none"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth="2"
+                                viewBox="0 0 24 24"
+                                stroke="currentColor"
+                              >
+                                <path d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        </button>
+                      );
+                    })
                   )}
                 </div>
               </div>
-            </div>
-          </>
-        ) : (
-          <div className="flex-1 flex items-center justify-center">
-            <p className="text-sm text-muted-foreground">
-              {t("providers.selectProvider")}
-            </p>
-          </div>
-        )}
-      </div>
-    </div>
 
-      {/* Model Selection Dialog */ }
-  {
-    showModelDialog && (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-        <div className="w-[700px] max-h-[80vh] bg-card border border-border rounded-lg shadow-xl flex flex-col">
-          {/* Dialog Header */}
-          <div className="px-6 py-4 border-b border-border">
-            <h3 className="text-lg font-semibold">{t("providers.selectModels", "选择模型")}</h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              从 {availableModels.length} 个可用模型中选择
-            </p>
-          </div>
-
-          {/* Search */}
-          <div className="px-6 py-3 border-b border-border">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <input
-                type="text"
-                value={dialogSearchQuery}
-                onChange={(e) => setDialogSearchQuery(e.target.value)}
-                placeholder={t("providers.searchModels")}
-                className="w-full pl-9 pr-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-              />
-            </div>
-          </div>
-
-          {/* Models List */}
-          <div className="flex-1 overflow-auto px-6 py-4">
-            <div className="space-y-2">
-              {filteredDialogModels.length === 0 ? (
-                <p className="text-sm text-muted-foreground text-center py-8">
-                  {dialogSearchQuery
-                    ? t("providers.noModelsFound", "未找到匹配的模型")
-                    : "没有可用的模型"}
+              {/* Dialog Footer */}
+              <div className="px-6 py-4 border-t border-border flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">
+                  已选择 {selectedModelsInDialog.size} 个模型
                 </p>
-              ) : (
-                filteredDialogModels.map((model) => {
-                  const isSelected = selectedModelsInDialog.has(model.id);
-                  return (
-                    <button
-                      key={model.id}
-                      onClick={() => handleToggleModelInDialog(model.id)}
-                      className={`w-full flex items-center gap-3 p-3 rounded-lg text-left transition-colors ${isSelected
-                        ? "bg-primary/10 border border-primary"
-                        : "bg-accent/50 hover:bg-accent border border-transparent"
-                        }`}
-                    >
-                      <div className="flex-1 min-w-0">
-                        <div className="text-sm font-medium text-foreground mb-1">
-                          {model.displayName}
-                        </div>
-                        <p className="text-xs text-muted-foreground truncate">
-                          {model.modelPath}
-                        </p>
-                      </div>
-                      <div
-                        className={`w-5 h-5 rounded border-2 flex items-center justify-center flex-shrink-0 ${isSelected
-                          ? "bg-primary border-primary"
-                          : "border-muted-foreground/30"
-                          }`}
-                      >
-                        {isSelected && (
-                          <svg
-                            className="w-3 h-3 text-primary-foreground"
-                            fill="none"
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                          >
-                            <path d="M5 13l4 4L19 7" />
-                          </svg>
-                        )}
-                      </div>
-                    </button>
-                  );
-                })
-              )}
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => {
+                      setShowModelDialog(false);
+                      setDialogSearchQuery("");
+                    }}
+                    className="px-4 py-2 text-sm font-medium text-foreground bg-secondary rounded hover:bg-secondary/80"
+                  >
+                    {t("actions.cancel")}
+                  </button>
+                  <button
+                    onClick={handleConfirmModelSelection}
+                    disabled={selectedModelsInDialog.size === 0}
+                    className="px-4 py-2 text-sm font-medium text-white bg-primary rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {t("actions.confirm", "确认")}
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
+        )
+      }
 
-          {/* Dialog Footer */}
-          <div className="px-6 py-4 border-t border-border flex items-center justify-between">
-            <p className="text-sm text-muted-foreground">
-              已选择 {selectedModelsInDialog.size} 个模型
-            </p>
-            <div className="flex gap-2">
-              <button
-                onClick={() => {
-                  setShowModelDialog(false);
-                  setDialogSearchQuery("");
-                }}
-                className="px-4 py-2 text-sm font-medium text-foreground bg-secondary rounded hover:bg-secondary/80"
-              >
-                {t("actions.cancel")}
-              </button>
-              <button
-                onClick={handleConfirmModelSelection}
-                disabled={selectedModelsInDialog.size === 0}
-                className="px-4 py-2 text-sm font-medium text-white bg-primary rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {t("actions.confirm", "确认")}
-              </button>
+      {/* Test Connection Result Dialog */}
+      {
+        showTestResult && testResult && (
+          <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
+            <div className="w-[500px] bg-card border border-border rounded-lg shadow-xl">
+              {/* Dialog Header */}
+              <div className={`px-6 py-4 border-b flex items-center gap-3 ${testResult.success
+                ? "bg-green-500/10 border-green-500/20"
+                : "bg-red-500/10 border-red-500/20"
+                }`}>
+                {testResult.success ? (
+                  <CheckCircle className="w-6 h-6 text-green-500" />
+                ) : (
+                  <XCircle className="w-6 h-6 text-red-500" />
+                )}
+                <div>
+                  <h3 className="text-lg font-semibold">
+                    {testResult.success
+                      ? t("providers.testSuccess", "连接成功")
+                      : t("providers.testFailed", "连接失败")}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {isCustomProvider ? selectedCustomProvider?.name : selectedBuiltinProvider?.name}
+                  </p>
+                </div>
+              </div>
+
+              {/* Dialog Content */}
+              <div className="px-6 py-4">
+                <div className={`p-4 rounded-lg text-sm ${testResult.success
+                  ? "bg-green-500/5 border border-green-500/20 text-foreground"
+                  : "bg-red-500/5 border border-red-500/20 text-foreground"
+                  }`}>
+                  <p className="whitespace-pre-wrap break-words">{testResult.message}</p>
+                </div>
+              </div>
+
+              {/* Dialog Footer */}
+              <div className="px-6 py-4 border-t border-border flex justify-end">
+                <button
+                  onClick={() => setShowTestResult(false)}
+                  className="px-4 py-2 text-sm font-medium text-white bg-primary rounded hover:bg-primary/90"
+                >
+                  {t("actions.close")}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      </div>
-    )
-  }
+        )
+      }
 
-  {/* Test Connection Result Dialog */ }
-  {
-    showTestResult && testResult && (
-      <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-        <div className="w-[500px] bg-card border border-border rounded-lg shadow-xl">
-          {/* Dialog Header */}
-          <div className={`px-6 py-4 border-b flex items-center gap-3 ${testResult.success
-            ? "bg-green-500/10 border-green-500/20"
-            : "bg-red-500/10 border-red-500/20"
-            }`}>
-            {testResult.success ? (
-              <CheckCircle className="w-6 h-6 text-green-500" />
-            ) : (
-              <XCircle className="w-6 h-6 text-red-500" />
-            )}
-            <div>
-              <h3 className="text-lg font-semibold">
-                {testResult.success
-                  ? t("providers.testSuccess", "连接成功")
-                  : t("providers.testFailed", "连接失败")}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {isCustomProvider ? selectedCustomProvider?.name : selectedBuiltinProvider?.name}
-              </p>
-            </div>
-          </div>
-
-          {/* Dialog Content */}
-          <div className="px-6 py-4">
-            <div className={`p-4 rounded-lg text-sm ${testResult.success
-              ? "bg-green-500/5 border border-green-500/20 text-foreground"
-              : "bg-red-500/5 border border-red-500/20 text-foreground"
-              }`}>
-              <p className="whitespace-pre-wrap break-words">{testResult.message}</p>
-            </div>
-          </div>
-
-          {/* Dialog Footer */}
-          <div className="px-6 py-4 border-t border-border flex justify-end">
-            <button
-              onClick={() => setShowTestResult(false)}
-              className="px-4 py-2 text-sm font-medium text-white bg-primary rounded hover:bg-primary/90"
-            >
-              {t("actions.close")}
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  {/* Custom Provider Dialog */ }
-  <CustomProviderDialog
-    isOpen={showCustomProviderDialog}
-    onClose={() => setShowCustomProviderDialog(false)}
-    onConfirm={handleAddCustomProvider}
-    existingProviders={providers.map(p => p.name)}
-  />
+      {/* Custom Provider Dialog */}
+      <CustomProviderDialog
+        isOpen={showCustomProviderDialog}
+        onClose={() => setShowCustomProviderDialog(false)}
+        onConfirm={handleAddCustomProvider}
+        existingProviders={providers.map(p => p.name)}
+      />
     </div >
   );
 }
