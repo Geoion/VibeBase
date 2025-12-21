@@ -30,6 +30,7 @@ export default defineConfig(async () => ({
         main: path.resolve(__dirname, "index.html"),
         variables: path.resolve(__dirname, "variables.html"),
         settings: path.resolve(__dirname, "settings.html"),
+        arena: path.resolve(__dirname, "arena.html"),
       },
     },
   },
