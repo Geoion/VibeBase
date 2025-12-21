@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useWorkspaceStore, Workspace, FileNode } from "../../stores/workspaceStore";
 import { useEditorStore } from "../../stores/editorStore";
 import { invoke } from "@tauri-apps/api/tauri";
+import { message } from "@tauri-apps/api/dialog";
 import { RefreshCw, FilePlus, FolderPlus, GitBranch } from "lucide-react";
 import { useState, useRef } from "react";
 import NewPromptDialog from "../dialogs/NewPromptDialog";
@@ -153,9 +154,17 @@ export default function Navigator() {
     setShowNewFolderDialog(true);
   };
 
-  const handleGit = () => {
-    // TODO: 实现 Git 功能
-    console.log("Git button clicked");
+  const handleGit = async () => {
+    try {
+      await message(t("common.featureComingSoon"), { 
+        title: "VibeBase",
+        type: "info" 
+      });
+    } catch (error) {
+      console.error("Failed to show message:", error);
+      // 降级到 alert
+      alert(t("common.featureComingSoon"));
+    }
   };
 
   // 处理拖拽移动到文件夹
