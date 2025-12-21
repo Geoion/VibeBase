@@ -4,7 +4,7 @@ import { useEditorStore } from "../../stores/editorStore";
 import { invoke } from "@tauri-apps/api/tauri";
 import { message } from "@tauri-apps/api/dialog";
 import { RefreshCw, FilePlus, FolderPlus, GitBranch } from "lucide-react";
-import { useState, useRef } from "react";
+import { useState } from "react";
 import NewPromptDialog from "../dialogs/NewPromptDialog";
 import NewFolderDialog from "../dialogs/NewFolderDialog";
 import DeleteConfirmDialog from "../dialogs/DeleteConfirmDialog";
