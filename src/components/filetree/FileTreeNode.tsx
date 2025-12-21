@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useRef } from "react";
 import { FileNode } from "../../stores/workspaceStore";
 import { ChevronRight, ChevronDown, Folder, File, FileCode } from "lucide-react";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
