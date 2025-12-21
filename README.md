@@ -16,9 +16,9 @@ A desktop tool for **prompt engineers** and **LLM developers** to:
 - 🔍 Select the best model for your specific use case
 - 🐛 Debug prompts with detailed metrics and execution history
 
-## ✨ Features
+## Features
 
-### 🎯 Core Capabilities
+### Core Capabilities
 
 - **🏟️ Arena Mode**: Compare 2-10 LLM models simultaneously to find the best one for your prompt
 - **📝 Prompt Management**: Organize, version, and manage prompts in `.vibe.md` Markdown format
@@ -29,7 +29,7 @@ A desktop tool for **prompt engineers** and **LLM developers** to:
 - **🔐 Secure API Keys**: Store credentials safely in system Keychain/Credential Manager
 - **🗂️ Workspace Management**: Organize prompts with folder structure and file tree navigation
 
-### 🚀 Engineering & Debug Tools
+### Engineering & Debug Tools
 
 - **📊 Performance Metrics**: Track latency, token usage, and cost for every execution
 - **📈 Arena Statistics**: Analyze model performance with votes, win rates, and comparisons
@@ -40,7 +40,7 @@ A desktop tool for **prompt engineers** and **LLM developers** to:
 - **🌙 Dark Mode**: Adaptive theme (Light/Dark/System) for comfortable debugging
 - **🗄️ Workspace Database**: SQLite-based local storage for all your engineering data
 
-## 💡 Why VibeBase?
+## Why VibeBase?
 
 **Problem**: When developing LLM applications, you need to:
 - Test the same prompt across multiple models
@@ -56,7 +56,7 @@ A desktop tool for **prompt engineers** and **LLM developers** to:
 
 Perfect for prompt engineers, LLM developers, and AI product teams who need to make data-driven decisions about model selection and prompt optimization.
 
-## 🎬 Quick Start
+## Quick Start
 
 ### Prerequisites
 
@@ -87,7 +87,7 @@ npm run tauri build
 # Output will be in src-tauri/target/release/bundle/
 ```
 
-## 📖 Usage
+## Usage
 
 ### 1. Open a Workspace
 
@@ -142,7 +142,7 @@ Generate a greeting message.
 5. Compare responses side-by-side
 6. Vote for the best response
 
-## 🏗️ Architecture
+## Architecture
 
 ### Tech Stack
 
@@ -205,7 +205,7 @@ VibeBase/
     └── arena_battles       # Arena results
 ```
 
-## 🔑 Supported LLM Providers
+## Supported LLM Providers
 
 | Provider | Status | Base URL | Notes |
 |----------|--------|----------|-------|
@@ -225,7 +225,7 @@ VibeBase supports any OpenAI-compatible API endpoint. You can add custom provide
 2. Enter provider ID, display name, and base URL
 3. Configure API key and models
 
-## 🎮 Key Features
+## Key Features
 
 ### Arena Mode - Find Your Best Model
 
@@ -294,44 +294,7 @@ Configure per-prompt settings:
 - **Test Data**: Path to test data file
 - **Variables**: Detected variables
 
-## 🔐 Security
-
-### API Key Storage
-
-- **System Keychain**: API keys stored in macOS Keychain / Windows Credential Manager
-- **Never in Git**: Keys never appear in configuration files
-- **Team-Friendly**: Each team member uses their own keys
-- **Secure References**: Only keyring references stored in database
-
-### Data Privacy
-
-- **Local-First**: All data stored locally on your machine
-- **No Cloud Sync**: Your prompts and keys stay on your device
-- **Workspace Isolation**: Each workspace has separate database
-
-### .gitignore Configuration
-
-```gitignore
-# VibeBase databases (optional)
-.vibebase/*.db
-
-# Temporary files (required)
-.vibebase/*.db-shm
-.vibebase/*.db-wal
-.vibebase/cache/
-```
-
-## 🌍 Internationalization
-
-VibeBase supports multiple languages:
-
-- 🇨🇳 Simplified Chinese (简体中文)
-- 🇹🇼 Traditional Chinese (繁體中文)
-- 🇺🇸 English
-
-Change language in **Settings → General → Language**
-
-## 🐛 Troubleshooting
+## Troubleshooting
 
 ### Prompt files not showing up
 
@@ -362,36 +325,7 @@ Change language in **Settings → General → Language**
 3. Verify network connection
 4. Check Settings → Arena for configuration
 
-## 🗺️ Roadmap
-
-### Current: v0.1.0 (Alpha)
-
-- ✅ Core prompt editing and execution
-- ✅ Multi-provider support
-- ✅ Arena mode
-- ✅ File history
-- ✅ Global variables
-- ✅ Workspace management
-
-### Upcoming: v0.2.0
-
-- 🔲 Git integration (commit, push, pull)
-- 🔲 File watching and auto-reload
-- 🔲 Test matrix execution (CSV/JSON)
-- 🔲 AI-powered evaluation
-- 🔲 Streaming responses
-- 🔲 Batch execution
-
-### Future: v1.0.0
-
-- 🔲 Python SDK
-- 🔲 CLI tool
-- 🔲 Plugin system
-- 🔲 Cloud sync (optional)
-- 🔲 Collaboration features
-- 🔲 Performance monitoring
-
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
@@ -418,25 +352,9 @@ Contributions are welcome! Please feel free to submit a Pull Request.
 - 📚 Documentation
 - 🧪 Testing
 
-## 📄 License
+## License
 
 MIT License - see [LICENSE](./LICENSE) file for details
-
-## 🙏 Acknowledgments
-
-Built with love by [Geoion](https://github.com/Geoion)
-
-Special thanks to the open-source community and all contributors to:
-- [Tauri](https://tauri.app/)
-- [React](https://react.dev/)
-- [Monaco Editor](https://microsoft.github.io/monaco-editor/)
-- [Tailwind CSS](https://tailwindcss.com/)
-
-## 📞 Contact & Support
-
-- **GitHub**: [@Geoion](https://github.com/Geoion)
-- **Repository**: [github.com/Geoion/VibeBase](https://github.com/Geoion/VibeBase)
-- **Issues**: [Report a bug](https://github.com/Geoion/VibeBase/issues)
 
 ---
 
