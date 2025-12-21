@@ -3,10 +3,9 @@ import { useEditorStore } from "../../stores/editorStore";
 import { invoke } from "@tauri-apps/api/tauri";
 import { useEffect, useState } from "react";
 import ExecutionPanel from "../execution/ExecutionPanel";
-import MetadataPanel from "../metadata/MetadataPanel";
 import HistoryPanel from "../history/HistoryPanel";
 
-type TabType = "execution" | "metadata" | "history";
+type TabType = "execution" | "history";
 
 export default function Inspector() {
   const { t } = useTranslation();
@@ -54,16 +53,6 @@ export default function Inspector() {
             : "border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/30"
             } ${!currentFile ? "opacity-50 cursor-not-allowed" : ""}`}
         >
-          {t("inspector.execution", "Execution")}
-        </button>
-        <button
-          onClick={() => setActiveTab("metadata")}
-          disabled={!currentFile}
-          className={`flex-1 px-3 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === "metadata"
-            ? "border-primary text-primary bg-accent/50"
-            : "border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/30"
-            } ${!currentFile ? "opacity-50 cursor-not-allowed" : ""}`}
-        >
           {t("inspector.metadata", "Metadata")}
         </button>
         <button
@@ -79,14 +68,11 @@ export default function Inspector() {
       </div>
 
       {/* Inspector Content */}
-      <div className="flex-1 overflow-auto">
+      <div className="flex-1 overflow-hidden flex flex-col">
         {currentFile ? (
           <>
             {activeTab === "execution" && (
-              <ExecutionPanel variables={variables} promptContent={content} />
-            )}
-            {activeTab === "metadata" && (
-              <MetadataPanel filePath={currentFile} />
+              <ExecutionPanel variables={variables} promptContent={content} filePath={currentFile} />
             )}
             {activeTab === "history" && (
               <HistoryPanel filePath={currentFile} />
