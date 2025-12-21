@@ -56,13 +56,13 @@ export default function FileTreeNode({
   };
 
   const handleClick = (e: React.MouseEvent) => {
-    // 如果正在拖拽，忽略点击
+    // Ignore click if dragging
     if (isBeingDragged) {
       e.stopPropagation();
       return;
     }
 
-    // 延迟执行点击，确保不是拖拽操作
+    // Delay click execution to ensure it's not a drag operation
     if (clickTimer.current) {
       clearTimeout(clickTimer.current);
     }
@@ -76,7 +76,7 @@ export default function FileTreeNode({
     }, 100);
   };
 
-  // 判断是否是拖放目标（通过父组件的 dropTarget 来判断，在 Navigator 中会高亮）
+  // Determine if this is a drop target (determined by parent's dropTarget, will be highlighted in Navigator)
   const isThisBeingDragged = isBeingDragged && draggedNode?.path === node.path;
 
   if (node.type === "folder") {
@@ -130,7 +130,7 @@ export default function FileTreeNode({
   const isActive = currentFile === node.path;
   const Icon = node.is_vibe_file ? FileCode : File;
 
-  // 隐藏 .vibe.md 后缀
+  // Hide .vibe.md suffix
   const displayName = node.name.endsWith('.vibe.md')
     ? node.name.slice(0, -8)
     : node.name;
