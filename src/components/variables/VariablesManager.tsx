@@ -84,7 +84,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
 
       await invoke("save_global_variables", { variables });
 
-      // 保存成功后关闭窗口
+      // Close window after successful save
       if (isStandaloneWindow) {
         await handleClose();
       } else {
@@ -117,7 +117,7 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
     }
   };
 
-  // 过滤变量
+  // Filter variables
   const filteredVariables = variables.filter((variable) =>
     variable.key.toLowerCase().includes(searchQuery.toLowerCase())
   );
