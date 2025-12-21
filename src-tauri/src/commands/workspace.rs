@@ -652,7 +652,7 @@ pub fn get_arena_statistics(
             *model_wins.entry(winner.clone()).or_insert(0) += 1;
         }
         
-        // 统计投票
+        // Count votes
         if let Some(ref votes_str) = battle.votes {
             if let Ok(votes) = serde_json::from_str::<HashMap<String, i32>>(votes_str) {
                 for (model, count) in votes {
@@ -661,13 +661,13 @@ pub fn get_arena_statistics(
             }
         }
         
-        // 统计性能数据
+        // Count performance data
         if let Ok(outputs) = serde_json::from_str::<Vec<serde_json::Value>>(&battle.outputs) {
-            // 统计本次对比的模型数量
+            // Count number of models in this comparison
             total_model_appearances += outputs.len() as i32;
             
             for output in outputs {
-                // 直接从字段读取，统一数据结构
+                // Read directly from fields, unify data structure
                 let provider_name = output.get("provider_name")
                     .and_then(|v| v.as_str())
                     .or_else(|| output.get("metadata").and_then(|m| m.get("provider")).and_then(|v| v.as_str()))
