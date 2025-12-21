@@ -248,6 +248,7 @@
     "customProviders": "自定义提供商",
     "builtinProviders": "内置提供商",
     "custom": "自定义",
+    "customProvider": "自定义 Provider",
     "customName": "Provider ID",
     "customNameHint": "英文小写，不能与现有 Provider 重复，如：my-provider",
     "customDisplayName": "显示名称",
