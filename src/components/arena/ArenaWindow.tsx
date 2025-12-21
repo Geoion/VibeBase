@@ -56,7 +56,7 @@ interface ArenaSettings {
 export default function ArenaWindow({ onClose, isStandaloneWindow = false }: ArenaWindowProps) {
   const { t } = useTranslation();
 
-  // 从 localStorage 读取传递的数据
+  // Read passed data from localStorage
   const [variables, setVariables] = useState<string[]>([]);
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [filePath, setFilePath] = useState<string>("");
