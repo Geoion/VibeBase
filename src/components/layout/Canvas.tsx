@@ -92,29 +92,6 @@ export default function Canvas() {
     };
   }, [content, currentFile, isDirty, workspace?.path]);
 
-  const handleSave = async () => {
-    if (!currentFile || !isDirty) return;
-
-    // Clear auto-save timer
-    if (saveTimeoutRef.current) {
-      clearTimeout(saveTimeoutRef.current);
-    }
-
-    try {
-      await invoke("save_prompt", {
-        filePath: currentFile,
-        content: content,
-      });
-      setDirty(false);
-      console.log("File saved successfully");
-
-      // Save file history
-      await saveHistory(currentFile, content);
-    } catch (error) {
-      console.error("Failed to save file:", error);
-    }
-  };
-
   const handleEditorChange = (value: string | undefined) => {
     if (value !== undefined) {
       setContent(value);
