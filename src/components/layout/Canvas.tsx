@@ -6,10 +6,10 @@ import { FileCode, History, X, Check } from "lucide-react";
 import MonacoEditor from "../editor/MonacoEditor";
 import { useEffect, useRef, useState } from "react";
 
-// 历史保存时间间隔（5分钟）
+// History save interval (5 minutes)
 const HISTORY_SAVE_INTERVAL = 5 * 60 * 1000;
 
-// 记录每个文件上次保存历史的时间
+// Record last history save time for each file
 const lastHistorySaveTime: Record<string, number> = {};
 
 export default function Canvas() {
