@@ -25,7 +25,7 @@ interface VoteCardProps {
 }
 
 export default function VoteCard({
-  modelId,
+  modelId: _modelId,
   modelName,
   providerType,
   output,
