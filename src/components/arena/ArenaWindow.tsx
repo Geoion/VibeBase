@@ -64,7 +64,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
   const [fileName, setFileName] = useState<string>();
   const [workspacePath, setWorkspacePath] = useState<string>();
 
-  // Arena 状态
+  // Arena state
   const [enabledModels, setEnabledModels] = useState<EnabledModel[]>([]);
   const [providers, setProviders] = useState<LLMProvider[]>([]);
   const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set());
@@ -77,7 +77,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
     card_density: "normal",
   });
 
-  // 执行状态
+  // Execution state
   const [isExecuting, setIsExecuting] = useState(false);
   const [results, setResults] = useState<Map<string, ExecutionResult>>(new Map());
   const [streamingOutputs, setStreamingOutputs] = useState<Map<string, string>>(new Map());
@@ -85,7 +85,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
   const [modelErrors, setModelErrors] = useState<Map<string, string>>(new Map());
   const [error, setError] = useState<string | null>(null);
 
-  // 投票状态
+  // Voting state
   const [votes, setVotes] = useState<Set<string>>(new Set());
   const [winnerModel, setWinnerModel] = useState<string | null>(null);
   const [battleId, setBattleId] = useState<string | null>(null);
@@ -96,7 +96,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
 
   const loadArenaData = async () => {
     try {
-      // 从 localStorage 读取 Arena 上下文
+      // Read Arena context from localStorage
       const arenaContext = localStorage.getItem("arena_context");
       if (arenaContext) {
         const context = JSON.parse(arenaContext);
