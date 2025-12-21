@@ -227,7 +227,7 @@ export default function Navigator() {
     }
 
     // Check for name conflict in root
-    const rootHasChild = workspace.file_tree.children.some((child: FileNode) => child.name === draggedNode.name);
+    const rootHasChild = workspace.file_tree.type === 'folder' && workspace.file_tree.children.some((child: FileNode) => child.name === draggedNode.name);
     if (rootHasChild) {
       alert(`Already exists in root directory: ${draggedNode.name}`);
       return;
@@ -388,7 +388,7 @@ export default function Navigator() {
           setIsRootDropZone(false);
         }}
       >
-        {workspace?.file_tree ? (
+        {workspace?.file_tree && workspace.file_tree.type === 'folder' ? (
           <>
             {workspace.file_tree.children.map((child: FileNode, idx: number) => (
               <div
