@@ -260,7 +260,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
 
               console.log(`[Arena] Execution success for ${model.model_name}`);
 
-              // 立即更新 results 状态，然后移除加载状态
+              // Immediately update results state, then remove loading state
               setResults(prev => {
                 const newMap = new Map(prev);
                 newMap.set(modelId, result);
