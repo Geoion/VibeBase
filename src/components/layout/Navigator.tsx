@@ -227,7 +227,7 @@ export default function Navigator() {
     }
 
     // Check for name conflict in root
-    const rootHasChild = workspace.file_tree.children.some(child => child.name === draggedNode.name);
+    const rootHasChild = workspace.file_tree.children.some((child: FileNode) => child.name === draggedNode.name);
     if (rootHasChild) {
       alert(`Already exists in root directory: ${draggedNode.name}`);
       return;
@@ -363,7 +363,7 @@ export default function Navigator() {
       {/* File Tree */}
       <div
         className={`flex-1 overflow-auto p-2 relative ${isRootDropZone ? "bg-primary/10 border-2 border-primary border-dashed" : ""}`}
-        onMouseMove={(e) => {
+        onMouseMove={() => {
           // If dragging and mouse is in blank area (not on any folder), it's root drop zone
           if (isDragging && draggedNode && !dropTarget) {
             setIsRootDropZone(true);
@@ -371,7 +371,7 @@ export default function Navigator() {
             setIsRootDropZone(false);
           }
         }}
-        onMouseUp={(e) => {
+        onMouseUp={() => {
           console.log("🖱️ Mouse up, isDragging:", isDragging, "dropTarget:", dropTarget?.name, "isRoot:", isRootDropZone);
 
           // Check if dropped on folder
@@ -390,7 +390,7 @@ export default function Navigator() {
       >
         {workspace?.file_tree ? (
           <>
-            {workspace.file_tree.children.map((child, idx) => (
+            {workspace.file_tree.children.map((child: FileNode, idx: number) => (
               <div
                 key={idx}
                 className={dropTarget?.path === child.path ? "bg-primary/10 rounded-md border-2 border-primary" : ""}
