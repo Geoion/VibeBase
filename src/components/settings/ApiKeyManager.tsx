@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { useConfigStore } from "../../stores/configStore";
-import { Key, Check, X, Loader2 } from "lucide-react";
+import { Key, Check, Loader2 } from "lucide-react";
 
 export default function ApiKeyManager() {
   const { config, currentEnvironment } = useConfigStore();
@@ -144,11 +144,10 @@ export default function ApiKeyManager() {
 
       {message && (
         <div
-          className={`p-3 rounded-md text-sm ${
-            message.type === "success"
+          className={`p-3 rounded-md text-sm ${message.type === "success"
               ? "bg-green-500/10 border border-green-500/20 text-green-600 dark:text-green-400"
               : "bg-destructive/10 border border-destructive/20 text-destructive"
-          }`}
+            }`}
         >
           {message.text}
         </div>
@@ -162,9 +161,3 @@ export default function ApiKeyManager() {
     </div>
   );
 }
-
-
-
-
-
-
