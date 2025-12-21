@@ -620,7 +620,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
 
       console.log(`[Arena Retry] Success for ${model.model_name}`);
 
-      // 更新结果
+      // Update results
       setResults(prev => {
         const newMap = new Map(prev);
         newMap.set(modelId, result);
