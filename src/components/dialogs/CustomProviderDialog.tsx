@@ -48,7 +48,7 @@ export default function CustomProviderDialog({
       return;
     }
 
-    // 验证 URL 格式
+    // Validate URL format
     try {
       new URL(baseUrl);
     } catch (e) {
@@ -56,7 +56,7 @@ export default function CustomProviderDialog({
       return;
     }
 
-    // 检查名称重复（不区分大小写）
+    // Check for duplicate names (case-insensitive)
     const lowerName = name.toLowerCase();
     if (existingProviders.some(p => p.toLowerCase() === lowerName)) {
       setError(t("providers.customNameExists"));
