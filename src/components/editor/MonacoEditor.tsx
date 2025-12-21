@@ -4,7 +4,7 @@ import { useThemeStore } from "../../stores/themeStore";
 import { editor, languages } from "monaco-editor";
 import { invoke } from "@tauri-apps/api/tauri";
 
-// 模块级别的标志，确保补全提供器只注册一次
+// Module-level flag to ensure completion provider is registered only once
 let completionProviderRegistered = false;
 
 interface MonacoEditorProps {
@@ -25,7 +25,7 @@ export default function MonacoEditor({
   const monacoRef = useRef<Monaco | null>(null);
   const decorationsRef = useRef<string[]>([]);
 
-  // 获取有效主题（解析 "system" 为实际的 light/dark）
+  // Get effective theme (resolve "system" to actual light/dark)
   const getEffectiveTheme = (): "light" | "dark" => {
     if (theme === "system") {
       return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
