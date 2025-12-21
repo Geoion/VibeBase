@@ -212,7 +212,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
 
               console.log(`[Arena] Full provider loaded`);
 
-              // 根据 api_key_source 获取 API key
+              // Get API key based on api_key_source
               let apiKey = "";
               if (fullProvider.api_key_source === "keychain" && fullProvider.api_key_ref) {
                 console.log(`[Arena] Getting API key from keychain: ${fullProvider.api_key_ref}`);
@@ -226,17 +226,17 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
 
               console.log(`[Arena] Final API key length: ${apiKey.length}`);
 
-              // 加载 runtime 并替换模型
+              // Load runtime and replace model
               const runtime = await invoke("load_prompt_runtime", {
                 filePath: filePath,
               });
 
               console.log(`[Arena] Runtime loaded, original provider: ${runtime.config.provider}`);
 
-              // 修改 model 和 provider
+              // Modify model and provider
               runtime.config.model = model.model_id;
 
-              // 根据 provider 类型设置正确的枚举值
+              // Set correct enum value based on provider type
               if (fullProvider.provider === "openrouter") {
                 runtime.config.provider = "openrouter";
               }
