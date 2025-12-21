@@ -254,7 +254,7 @@ export default function ArenaHistoryWindow({ onClose, isStandaloneWindow = false
             {(() => {
               const outputs = parseOutputs(selectedBattle.outputs);
               const modelCount = outputs.length;
-              
+
               // 调试日志：显示 winner_model 的值
               if (selectedBattle.winner_model) {
                 console.log("[Arena History] Winner model:", selectedBattle.winner_model);
@@ -288,14 +288,13 @@ export default function ArenaHistoryWindow({ onClose, isStandaloneWindow = false
                     {outputs.map((output) => {
                       const modelKey = output.model_id || output.model || "unknown";
                       const modelName = output.model_name || output.metadata.model;
-                      const providerName = output.provider_name || output.metadata.provider;
                       const providerType = output.provider_type || output.metadata.provider;
 
                       // 尝试多种方式匹配 winner：model_name, model_id, 或 metadata.model
-                      const isWinner = selectedBattle.winner_model === modelName || 
-                                      selectedBattle.winner_model === modelKey ||
-                                      selectedBattle.winner_model === output.metadata.model;
-                      
+                      const isWinner = selectedBattle.winner_model === modelName ||
+                        selectedBattle.winner_model === modelKey ||
+                        selectedBattle.winner_model === output.metadata.model;
+
                       // 调试日志
                       if (selectedBattle.winner_model) {
                         console.log(`[Arena History] Checking ${modelName}: isWinner=${isWinner}`, {
@@ -305,7 +304,7 @@ export default function ArenaHistoryWindow({ onClose, isStandaloneWindow = false
                           metadata_model: output.metadata.model
                         });
                       }
-                      
+
                       const votes = selectedBattle.votes ? JSON.parse(selectedBattle.votes) : {};
                       const hasVoted = votes[modelName] === 1;
 

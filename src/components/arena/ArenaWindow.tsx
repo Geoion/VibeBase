@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/tauri";
-import { Play, Loader2, Check, Trophy, X } from "lucide-react";
+import { Play, Loader2, Check, Trophy } from "lucide-react";
 import PromptPreview from "./PromptPreview";
 import VoteCard from "./VoteCard";
 import { appWindow } from "@tauri-apps/api/window";
@@ -51,6 +51,15 @@ interface ArenaSettings {
   remember_last_selection: boolean;
   auto_save_results: boolean;
   card_density: string;
+}
+
+interface PromptRuntime {
+  config: {
+    model: string;
+    provider: string;
+    [key: string]: any;
+  };
+  [key: string]: any;
 }
 
 export default function ArenaWindow({ onClose, isStandaloneWindow = false }: ArenaWindowProps) {
@@ -227,7 +236,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
               console.log(`[Arena] Final API key length: ${apiKey.length}`);
 
               // Load runtime and replace model
-              const runtime = await invoke("load_prompt_runtime", {
+              const runtime = await invoke<PromptRuntime>("load_prompt_runtime", {
                 filePath: filePath,
               });
 
@@ -337,7 +346,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
             console.log(`[Arena Serial] Final API key length: ${apiKey.length}`);
 
             // 加载 runtime 并替换模型
-            const runtime = await invoke("load_prompt_runtime", {
+            const runtime = await invoke<PromptRuntime>("load_prompt_runtime", {
               filePath: filePath,
             });
 
@@ -595,7 +604,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
       }
 
       // 加载 runtime 并替换模型
-      const runtime = await invoke("load_prompt_runtime", {
+      const runtime = await invoke<PromptRuntime>("load_prompt_runtime", {
         filePath: filePath,
       });
 
