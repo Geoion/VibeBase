@@ -404,10 +404,10 @@ pub fn initialize_workspace_db(workspace_path: String) -> Result<(), String> {
     
     // Create .vibebase directory
     let vibebase_dir = path.join(".vibebase");
-    fs::create_dir_all(&vibebase_dir).map_err(|e| format!("创建 .vibebase 目录失败: {}", e))?;
+    fs::create_dir_all(&vibebase_dir).map_err(|e| format!("Failed to create .vibebase directory: {}", e))?;
     
     // Initialize database (will create schema if not exists)
-    ProjectDatabase::new(path).map_err(|e| format!("初始化数据库失败: {}", e))?;
+    ProjectDatabase::new(path).map_err(|e| format!("Failed to initialize database: {}", e))?;
     
     Ok(())
 }
@@ -418,43 +418,43 @@ pub fn clear_workspace_db(workspace_path: String) -> Result<(), String> {
     let db_path = path.join(".vibebase").join("project.db");
     
     if !db_path.exists() {
-        return Err("数据库文件不存在".to_string());
+        return Err("Database file does not exist".to_string());
     }
     
     // Open database and clear all data
-    let conn = rusqlite::Connection::open(&db_path).map_err(|e| format!("打开数据库失败: {}", e))?;
+    let conn = rusqlite::Connection::open(&db_path).map_err(|e| format!("Failed to open database: {}", e))?;
     
     // Delete all data from tables
     conn.execute("DELETE FROM file_history", [])
-        .map_err(|e| format!("清空 file_history 失败: {}", e))?;
+        .map_err(|e| format!("Failed to clear file_history: {}", e))?;
     
     conn.execute("DELETE FROM execution_history", [])
-        .map_err(|e| format!("清空 execution_history 失败: {}", e))?;
+        .map_err(|e| format!("Failed to clear execution_history: {}", e))?;
     
     conn.execute("DELETE FROM evaluation_results", [])
-        .map_err(|e| format!("清空 evaluation_results 失败: {}", e))?;
+        .map_err(|e| format!("Failed to clear evaluation_results: {}", e))?;
     
     conn.execute("DELETE FROM test_results", [])
-        .map_err(|e| format!("清空 test_results 失败: {}", e))?;
+        .map_err(|e| format!("Failed to clear test_results: {}", e))?;
     
     conn.execute("DELETE FROM comparison_results", [])
-        .map_err(|e| format!("清空 comparison_results 失败: {}", e))?;
+        .map_err(|e| format!("Failed to clear comparison_results: {}", e))?;
     
     conn.execute("DELETE FROM file_dependencies", [])
-        .map_err(|e| format!("清空 file_dependencies 失败: {}", e))?;
+        .map_err(|e| format!("Failed to clear file_dependencies: {}", e))?;
     
     conn.execute("DELETE FROM test_datasets", [])
-        .map_err(|e| format!("清空 test_datasets 失败: {}", e))?;
+        .map_err(|e| format!("Failed to clear test_datasets: {}", e))?;
     
     conn.execute("DELETE FROM evaluation_rules", [])
-        .map_err(|e| format!("清空 evaluation_rules 失败: {}", e))?;
+        .map_err(|e| format!("Failed to clear evaluation_rules: {}", e))?;
     
     conn.execute("DELETE FROM prompt_files", [])
-        .map_err(|e| format!("清空 prompt_files 失败: {}", e))?;
+        .map_err(|e| format!("Failed to clear prompt_files: {}", e))?;
     
     // Vacuum to reclaim space
     conn.execute("VACUUM", [])
-        .map_err(|e| format!("整理数据库空间失败: {}", e))?;
+        .map_err(|e| format!("Failed to vacuum database: {}", e))?;
     
     Ok(())
 }
@@ -464,36 +464,36 @@ pub fn rename_file(old_path: String, new_name: String) -> Result<String, String>
     let old_path_obj = Path::new(&old_path);
     
     if !old_path_obj.exists() {
-        return Err("文件或文件夹不存在".to_string());
+        return Err("File or folder does not exist".to_string());
     }
     
-    // 验证新名称
+    // Validate new name
     if new_name.is_empty() {
-        return Err("名称不能为空".to_string());
+        return Err("Name cannot be empty".to_string());
     }
     
     if new_name.contains('/') || new_name.contains('\\') {
-        return Err("名称不能包含路径分隔符".to_string());
+        return Err("Name cannot contain path separators".to_string());
     }
     
     if new_name.starts_with('.') {
-        return Err("名称不能以点号开头".to_string());
+        return Err("Name cannot start with a dot".to_string());
     }
     
-    // 获取父目录
-    let parent_dir = old_path_obj.parent().ok_or("无法获取父目录")?;
+    // Get parent directory
+    let parent_dir = old_path_obj.parent().ok_or("Cannot get parent directory")?;
     
-    // 构建新路径
+    // Build new path
     let new_path = parent_dir.join(&new_name);
     
-    // 检查目标是否已存在
+    // Check if target already exists
     if new_path.exists() {
-        return Err(format!("名称 '{}' 已存在", new_name));
+        return Err(format!("Name '{}' already exists", new_name));
     }
     
-    // 执行重命名
+    // Perform rename
     fs::rename(&old_path_obj, &new_path)
-        .map_err(|e| format!("重命名失败: {}", e))?;
+        .map_err(|e| format!("Rename failed: {}", e))?;
     
     Ok(new_path.to_str().unwrap_or("").to_string())
 }
@@ -506,7 +506,7 @@ pub fn show_in_folder(path: String) -> Result<(), String> {
     let folder_path = if file_path.is_dir() {
         file_path
     } else {
-        file_path.parent().ok_or("无法获取父目录")?
+        file_path.parent().ok_or("Cannot get parent directory")?
     };
     
     #[cfg(target_os = "macos")]
@@ -523,7 +523,7 @@ pub fn show_in_folder(path: String) -> Result<(), String> {
                 .spawn()
         };
         
-        result.map_err(|e| format!("无法打开访达: {}", e))?;
+        result.map_err(|e| format!("Failed to open Finder: {}", e))?;
     }
     
     #[cfg(target_os = "windows")]
