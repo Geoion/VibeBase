@@ -11,13 +11,13 @@ pub struct VersionInfo {
 
 #[tauri::command]
 pub async fn check_for_updates() -> Result<VersionInfo, String> {
-    // 当前版本（从 Cargo.toml 或 tauri.conf.json 读取）
+    // Current version (read from Cargo.toml or tauri.conf.json)
     let current_version = env!("CARGO_PKG_VERSION").to_string();
     
-    // 在实际项目中，这里应该调用 GitHub API 或您自己的更新服务器
-    // 例如：https://api.github.com/repos/owner/repo/releases/latest
+    // In production, this should call GitHub API or your own update server
+    // Example: https://api.github.com/repos/owner/repo/releases/latest
     
-    // 模拟检查 - 实际实现时替换为真实的 API 调用
+    // Simulated check - replace with actual API call in production
     let latest_version = current_version.clone();
     let update_available = false;
     
