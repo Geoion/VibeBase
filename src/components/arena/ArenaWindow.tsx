@@ -205,7 +205,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
             try {
               console.log(`[Arena] Executing model: ${model.model_name}`);
 
-              // 获取完整的 provider 信息（包含真实 API key）
+              // Get full provider information (including real API key)
               const fullProvider = await invoke<LLMProvider>("get_llm_provider", {
                 providerName: model.provider_name,
               });
