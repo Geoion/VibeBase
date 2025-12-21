@@ -14,7 +14,7 @@ export default function DeleteConfirmDialog({
   onConfirm,
   onCancel,
 }: DeleteConfirmDialogProps) {
-  const { t } = useTranslation();
+  useTranslation();
 
   return (
     <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
@@ -62,4 +62,5 @@ export default function DeleteConfirmDialog({
     </div>
   );
 }
+
 
