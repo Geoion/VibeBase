@@ -695,7 +695,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
       <div className="flex-1 flex overflow-hidden">
         {/* Left Panel - Variables & Model Selection */}
         <div className="w-80 border-r border-border flex flex-col">
-          {/* Variables Section (固定) */}
+          {/* Variables Section (fixed) */}
           {variables.length > 0 && (
             <div className="p-4 border-b border-border">
               <h3 className="text-sm font-semibold mb-3">{t("arena.variables")}</h3>
@@ -723,7 +723,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
             </div>
           )}
 
-          {/* Model Selection (可滚动) */}
+          {/* Model Selection (scrollable) */}
           <div className="flex-1 overflow-auto p-4">
             <h3 className="text-sm font-semibold mb-2">{t("arena.selectModels")}</h3>
             <p className="text-xs text-muted-foreground mb-3">
@@ -765,7 +765,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
             )}
           </div>
 
-          {/* Run Button (固定在底部) */}
+          {/* Run Button (fixed at bottom) */}
           <div className="p-4 border-t border-border">
             <button
               onClick={handleExecute}
@@ -828,7 +828,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
                       const error = modelErrors.get(modelId);
 
                       if (isLoading) {
-                        // 显示加载中的卡片
+                        // Show loading card
                         return (
                           <VoteCard
                             key={modelId}
@@ -845,7 +845,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
                           />
                         );
                       } else if (error) {
-                        // 显示错误的卡片
+                        // Show error card
                         return (
                           <VoteCard
                             key={modelId}
