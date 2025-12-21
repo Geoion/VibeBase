@@ -553,7 +553,7 @@ pub fn show_in_folder(path: String) -> Result<(), String> {
             .or_else(|_| Command::new("dolphin").arg(folder_path).spawn())
             .or_else(|_| Command::new("thunar").arg(folder_path).spawn());
         
-        result.map_err(|e| format!("无法打开文件管理器: {}", e))?;
+        result.map_err(|e| format!("Failed to open file manager: {}", e))?;
     }
     
     Ok(())
@@ -568,7 +568,7 @@ pub fn save_arena_battle(
     models: String,
     outputs: String,
 ) -> Result<String, String> {
-    // 如果没有提供 workspace_path，尝试从当前上下文获取
+    // If workspace_path is not provided, try to get from current context
     let ws_path = workspace_path.ok_or("Workspace path is required")?;
     
     println!("[Rust] Saving arena battle to workspace: {}", ws_path);
@@ -634,7 +634,7 @@ pub fn get_arena_statistics(
     let battles = db.get_arena_battles(None, 1000)
         .map_err(|e| format!("Failed to get arena battles: {}", e))?;
     
-    // 统计数据结构
+    // Statistics data structure
     let mut model_votes: HashMap<String, i32> = HashMap::new();
     let mut model_wins: HashMap<String, i32> = HashMap::new();
     let mut provider_tokens: HashMap<String, (i64, i64)> = HashMap::new(); // (input, output)
@@ -647,7 +647,7 @@ pub fn get_arena_statistics(
     let mut total_model_appearances: i32 = 0;
     
     for battle in battles.iter() {
-        // 统计获胜者
+        // Count winners
         if let Some(ref winner) = battle.winner_model {
             *model_wins.entry(winner.clone()).or_insert(0) += 1;
         }
