@@ -49,7 +49,7 @@ export default function HistoryPanel({ filePath }: HistoryPanelProps) {
     }
   };
 
-  // 点击历史记录，在编辑区预览
+  // Click history entry to preview in editor
   const handleSelectHistory = async (entry: FileHistoryEntry) => {
     if (!workspacePath) return;
 
@@ -59,7 +59,7 @@ export default function HistoryPanel({ filePath }: HistoryPanelProps) {
         historyId: entry.id,
       });
 
-      // 设置历史预览状态，Canvas 会显示预览
+      // Set history preview state, Canvas will display preview
       setHistoryPreview({
         historyId: entry.id,
         content: content,
@@ -96,7 +96,7 @@ export default function HistoryPanel({ filePath }: HistoryPanelProps) {
     return date.toLocaleString();
   };
 
-  // 判断某个历史是否正在预览
+  // Determine if a history entry is being previewed
   const isPreviewingHistory = (entry: FileHistoryEntry) => {
     return historyPreview?.historyId === entry.id;
   };
