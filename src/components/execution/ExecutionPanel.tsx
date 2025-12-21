@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/tauri";
-import { Play, Loader2, AlertCircle, ChevronDown, Check, DollarSign, Trophy, X, Tag as TagIcon } from "lucide-react";
+import { Loader2, AlertCircle, ChevronDown, Check, Trophy, X, Tag as TagIcon } from "lucide-react";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
 import { useEditorStore } from "../../stores/editorStore";
 
@@ -65,7 +65,7 @@ interface EnabledModel {
 
 export default function ExecutionPanel({
   variables,
-  promptContent,
+  promptContent: _promptContent,
   filePath,
 }: ExecutionPanelProps) {
   const { t } = useTranslation();
@@ -73,13 +73,13 @@ export default function ExecutionPanel({
   const { currentFile } = useEditorStore();
   const [variableValues, setVariableValues] = useState<Record<string, string>>({});
   const [globalVariableKeys, setGlobalVariableKeys] = useState<Set<string>>(new Set());
-  const [providers, setProviders] = useState<LLMProvider[]>([]);
+  const [_providers, setProviders] = useState<LLMProvider[]>([]);
   const [enabledModels, setEnabledModels] = useState<EnabledModel[]>([]);
   const [selectedModels, setSelectedModels] = useState<Set<string>>(new Set());
   const [showModelMenu, setShowModelMenu] = useState(false);
-  const [isExecuting, setIsExecuting] = useState(false);
-  const [results, setResults] = useState<Map<string, ExecutionResult>>(new Map());
-  const [error, setError] = useState<string | null>(null);
+  const [isExecuting, _setIsExecuting] = useState(false);
+  const [_results, _setResults] = useState<Map<string, ExecutionResult>>(new Map());
+  const [_error, setError] = useState<string | null>(null);
 
   // Tags state
   const [tags, setTags] = useState<string[]>([]);
@@ -299,47 +299,16 @@ export default function ExecutionPanel({
     }
   };
 
-  const saveArenaBattle = async (resultsMap: Map<string, ExecutionResult>) => {
-    if (!workspace) {
-      console.warn("No workspace available, skipping arena battle save");
-      return;
-    }
-
-    try {
-      const modelsArray = Array.from(resultsMap.keys());
-      const outputsArray = Array.from(resultsMap.entries()).map(([modelId, result]) => {
-        const model = enabledModels.find(m => m.id === modelId);
-        return {
-          model_id: modelId,  // Original ID (for internal reference)
-          provider_name: model?.provider_name || result.metadata.provider,  // Provider display name
-          model_name: model?.model_name || result.metadata.model,  // Model display name
-          provider_type: model?.provider_type || result.metadata.provider,  // Provider type
-          output: result.output,
-          metadata: result.metadata,
-        };
-      });
-
-      await invoke("save_arena_battle", {
-        workspacePath: workspace.path,
-        promptFileId: null,  // TODO: Get from current file context
-        promptContent: promptContent,
-        inputVariables: JSON.stringify(variableValues),
-        models: JSON.stringify(modelsArray),
-        outputs: JSON.stringify(outputsArray),
-      });
-
-      console.log("Arena battle saved successfully");
-    } catch (error) {
-      console.error("Failed to save arena battle:", error);
-      // Don't show error to user, this is a background operation
-    }
+  const handleVariableChange = (variable: string, value: string) => {
+    setVariableValues((prev) => ({
+      ...prev,
+      [variable]: value,
+    }));
   };
 
   const canExecute =
     variables.every((v) => variableValues[v]) &&
     selectedModels.size > 0;
-
-  const isArenaMode = selectedModels.size >= 1;
 
   return (
     <div className="flex flex-col h-full">
