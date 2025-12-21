@@ -119,7 +119,7 @@ export default function Header() {
 
   const openArenaHistoryWindow = async () => {
     try {
-      // 保存当前 workspace 路径到 localStorage
+      // Save current workspace path to localStorage
       if (workspace) {
         localStorage.setItem("arena_history_workspace", workspace.path);
       }
@@ -131,7 +131,7 @@ export default function Header() {
 
   const openArenaStatisticsWindow = async () => {
     try {
-      // 保存当前 workspace 路径到 localStorage
+      // Save current workspace path to localStorage
       if (workspace) {
         localStorage.setItem("arena_history_workspace", workspace.path);
       }
