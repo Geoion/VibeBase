@@ -64,7 +64,7 @@ export default function SimpleDragTest() {
           color: "#666",
         }}
       >
-        {dropZoneHover && isDragging ? "松开鼠标放下" : "将项目拖到这里"}
+        {dropZoneHover && isDragging ? "Release mouse to drop" : "Drag items here"}
       </div>
 
       {result && (
@@ -74,14 +74,14 @@ export default function SimpleDragTest() {
       )}
 
       <div style={{ marginTop: "40px", padding: "20px", backgroundColor: "#fff", border: "2px solid #ccc" }}>
-        <h3>使用说明：</h3>
+        <h3>Instructions:</h3>
         <ul>
-          <li>✅ 按住鼠标左键在项目上</li>
-          <li>✅ 移动鼠标（至少 5 像素）</li>
-          <li>✅ 拖到目标区域</li>
-          <li>✅ 松开鼠标完成拖放</li>
+          <li>✅ Hold left mouse button on item</li>
+          <li>✅ Move mouse (at least 5 pixels)</li>
+          <li>✅ Drag to target area</li>
+          <li>✅ Release mouse to complete drop</li>
         </ul>
-        <p><strong>这个方法使用鼠标事件而非 HTML5 拖放 API，可以在 Tauri webview 中工作！</strong></p>
+        <p><strong>This method uses mouse events instead of HTML5 drag and drop API, and works in Tauri webview!</strong></p>
       </div>
     </div>
   );
