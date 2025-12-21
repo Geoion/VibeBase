@@ -864,7 +864,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
                           />
                         );
                       } else if (result) {
-                        // 显示已完成的卡片（有输出）
+                        // Show completed card (with output)
                         const displayOutput = streamingOutputs.get(modelId) || result.output;
 
                         return (

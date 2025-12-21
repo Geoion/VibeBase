@@ -243,7 +243,7 @@ export default function ExecutionPanel({
     if (newSelection.has(modelName)) {
       newSelection.delete(modelName);
     } else {
-      // 检查是否超过最大限制
+      // Check if exceeds maximum limit
       if (newSelection.size >= arenaSettings.max_concurrent) {
         alert(t("execution.max_models_reached"));
         return;
@@ -252,7 +252,7 @@ export default function ExecutionPanel({
     }
     setSelectedModels(newSelection);
 
-    // 保存选择（如果启用了记住功能）
+    // Save selection (if remember feature is enabled)
     if (arenaSettings.remember_last_selection) {
       localStorage.setItem("arena_last_selected_models", JSON.stringify(Array.from(newSelection)));
     }
@@ -264,7 +264,7 @@ export default function ExecutionPanel({
       return;
     }
 
-    // 所有执行都通过 Arena 窗口
+    // All executions go through Arena window
     handleOpenArena();
   };
 
@@ -279,7 +279,7 @@ export default function ExecutionPanel({
       return;
     }
 
-    // 保存 Arena 上下文到 localStorage
+    // Save Arena context to localStorage
     const arenaContext = {
       variables,
       variableValues,
@@ -290,7 +290,7 @@ export default function ExecutionPanel({
     };
     localStorage.setItem("arena_context", JSON.stringify(arenaContext));
 
-    // 打开 Arena 窗口
+    // Open Arena window
     try {
       await invoke("open_arena_window");
     } catch (error) {
