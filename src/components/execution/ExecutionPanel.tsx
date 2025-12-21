@@ -57,10 +57,10 @@ interface LLMProvider {
 
 interface EnabledModel {
   id: string;              // provider_name::model_id
-  model_id: string;        // 实际的模型 ID
-  model_name: string;      // 显示名称
-  provider_name: string;   // Provider 配置名称
-  provider_type: string;   // Provider 类型
+  model_id: string;        // Actual model ID
+  model_name: string;      // Display name
+  provider_name: string;   // Provider configuration name
+  provider_type: string;   // Provider type
 }
 
 export default function ExecutionPanel({
@@ -93,7 +93,7 @@ export default function ExecutionPanel({
     card_density: "normal",
   });
 
-  // 加载 Arena 设置
+  // Load Arena settings
   useEffect(() => {
     const loadSettings = async () => {
       try {
@@ -106,25 +106,25 @@ export default function ExecutionPanel({
     loadSettings();
   }, []);
 
-  // 加载 LLM Providers 和启用的模型
+  // Load LLM Providers and enabled models
   useEffect(() => {
     const loadData = async () => {
       try {
-        // 加载所有 providers（用于获取 API key 等配置）
+        // Load all providers (for getting API key and other configurations)
         const providersList = await invoke<LLMProvider[]>("list_llm_providers");
         setProviders(providersList);
 
-        // 加载所有启用的模型
+        // Load all enabled models
         const models = await invoke<EnabledModel[]>("list_enabled_models");
         setEnabledModels(models);
 
-        // 如果启用了"记住上次选择"，从 localStorage 恢复
+        // If "remember last selection" is enabled, restore from localStorage
         if (arenaSettings.remember_last_selection) {
           const saved = localStorage.getItem("arena_last_selected_models");
           if (saved) {
             try {
               const savedIds = JSON.parse(saved) as string[];
-              // 过滤出仍然存在的模型
+              // Filter out models that still exist
               const validIds = savedIds.filter(id => models.some(m => m.id === id));
               if (validIds.length > 0) {
                 setSelectedModels(new Set(validIds));
@@ -136,7 +136,7 @@ export default function ExecutionPanel({
           }
         }
 
-        // 否则自动选择第一个模型
+        // Otherwise auto-select the first model
         if (models.length > 0) {
           setSelectedModels(new Set([models[0].id]));
         }
@@ -148,7 +148,7 @@ export default function ExecutionPanel({
     loadData();
   }, [arenaSettings.remember_last_selection]);
 
-  // 加载全局变量并自动填充
+  // Load global variables and auto-fill
   useEffect(() => {
     const loadGlobalVariables = async () => {
       try {
@@ -156,7 +156,7 @@ export default function ExecutionPanel({
         const newValues: Record<string, string> = { ...variableValues };
         const globalKeys = new Set<string>();
 
-        // 为每个在全局变量中存在的变量自动填充默认值
+        // Auto-fill default values for each variable that exists in global variables
         variables.forEach((varName) => {
           const globalVar = globalVars.find((v) => v.key === varName);
           if (globalVar) {
