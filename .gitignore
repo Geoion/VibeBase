@@ -37,3 +37,8 @@ target
 .env
 .env.local
 
+# Tauri signing keys (NEVER commit private keys!)
+.tauri/
+*.key
+!*.key.pub
+
