@@ -277,7 +277,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
                 return newSet;
               });
 
-              // 同时也添加到本地变量，用于最后保存
+              // Also add to local variable for final save
               newResults.set(modelId, result);
 
               return { modelId, result };
@@ -285,7 +285,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
               console.error(`[Arena] Failed to execute ${model.model_name}:`, err);
               console.error(`[Arena] Error details:`, err);
 
-              // 保存错误信息
+              // Save error information
               const errorMessage = String(err);
               setModelErrors(prev => {
                 const newMap = new Map(prev);
@@ -293,7 +293,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
                 return newMap;
               });
 
-              // 移除加载状态
+              // Remove loading state
               setLoadingModels(prev => {
                 const newSet = new Set(prev);
                 newSet.delete(modelId);
@@ -307,7 +307,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
           await Promise.all(promises);
         }
       } else {
-        // 串行执行
+        // Serial execution
         for (const modelId of modelArray) {
           const model = enabledModels.find(m => m.id === modelId);
           if (!model) continue;
@@ -415,9 +415,9 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
         throw new Error(t("execution.all_models_failed"));
       }
 
-      // 注意：results 已在每个模型执行完成时立即更新，这里不需要再次调用 setResults
+      // Note: results are already updated immediately when each model execution completes, no need to call setResults again here
 
-      // 自动保存结果
+      // Auto-save results
       if (arenaSettings.auto_save_results && workspacePath) {
         saveArenaBattle(newResults);
       }
@@ -425,16 +425,16 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
       setError(String(err));
     } finally {
       setIsExecuting(false);
-      setLoadingModels(new Set()); // 清空所有加载状态
+      setLoadingModels(new Set()); // Clear all loading states
     }
   };
 
-  // 流式输出动画效果
+  // Streaming output animation effect
   const animateOutput = (modelId: string, fullOutput: string) => {
     const chars = fullOutput.split('');
     let currentIndex = 0;
 
-    // 根据文本长度调整速度
+    // Adjust speed based on text length
     const speed = Math.max(5, Math.min(50, 2000 / chars.length));
 
     const interval = setInterval(() => {
@@ -448,7 +448,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
         currentIndex++;
       } else {
         clearInterval(interval);
-        // 动画完成后，从 streaming 中移除，使用完整结果
+        // After animation completes, remove from streaming and use full result
         setStreamingOutputs(prev => {
           const newMap = new Map(prev);
           newMap.delete(modelId);
@@ -469,16 +469,16 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
       const outputsArray = Array.from(resultsMap.entries()).map(([modelId, result]) => {
         const model = enabledModels.find(m => m.id === modelId);
         return {
-          model_id: modelId,  // 原始 ID（用于内部引用）
-          provider_name: model?.provider_name || result.metadata.provider,  // Provider 显示名称
-          model_name: model?.model_name || result.metadata.model,  // 模型显示名称
-          provider_type: model?.provider_type || result.metadata.provider,  // Provider 类型
+          model_id: modelId,  // Original ID (for internal reference)
+          provider_name: model?.provider_name || result.metadata.provider,  // Provider display name
+          model_name: model?.model_name || result.metadata.model,  // Model display name
+          provider_type: model?.provider_type || result.metadata.provider,  // Provider type
           output: result.output,
           metadata: result.metadata,
         };
       });
 
-      // 使用当前文件内容或文件路径
+      // Use current file content or file path
       const contentToSave = promptContent || filePath;
 
       console.log("[Arena] Saving battle to:", workspacePath);
@@ -511,7 +511,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
     }
     setVotes(newVotes);
 
-    // 更新数据库中的投票
+    // Update votes in database
     if (battleId) {
       updateVotesInDB(newVotes, winnerModel);
     }
@@ -521,7 +521,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
     const newWinner = winnerModel === modelId ? null : modelId;
     setWinnerModel(newWinner);
 
-    // 更新数据库中的获胜者
+    // Update winner in database
     if (battleId) {
       updateVotesInDB(votes, newWinner);
     }
@@ -531,7 +531,7 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
     if (!battleId || !workspacePath) return;
 
     try {
-      // 使用 model_name 作为 key（与保存时的 model_name 字段对应）
+      // Use model_name as key (corresponds to model_name field when saving)
       const votesObject: Record<string, number> = {};
       votesSet.forEach(modelId => {
         const model = enabledModels.find(m => m.id === modelId);
