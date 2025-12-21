@@ -695,7 +695,7 @@ pub fn get_arena_statistics(
                     provider_latency.entry(provider_name.to_string()).or_insert_with(Vec::new).push(latency);
                     *provider_cost.entry(provider_name.to_string()).or_insert(0.0) += cost;
                     
-                    // Model 统计（直接使用 model_name）
+                    // Model statistics (using model_name directly)
                     let model_token_entry = model_tokens.entry(model_name.to_string()).or_insert((0, 0));
                     model_token_entry.0 += tokens_in;
                     model_token_entry.1 += tokens_out;
@@ -707,7 +707,7 @@ pub fn get_arena_statistics(
         }
     }
     
-    // 计算平均延迟
+    // Calculate average latency
     let mut provider_avg_latency: HashMap<String, i64> = HashMap::new();
     for (provider, latencies) in provider_latency.iter() {
         if !latencies.is_empty() {
