@@ -103,6 +103,7 @@ fn main() {
             get_arena_statistics,
             show_in_folder,
             check_for_updates,
+            install_update,
             get_app_version,
         ])
         .run(tauri::generate_context!())
