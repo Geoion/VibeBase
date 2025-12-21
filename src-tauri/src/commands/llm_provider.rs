@@ -233,11 +233,11 @@ pub fn test_llm_provider_connection(
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct EnabledModel {
-    pub id: String,              // 唯一标识：provider_name::model_id
-    pub model_id: String,        // 实际的模型 ID，如 anthropic/claude-3.7-sonnet:thinking
-    pub model_name: String,      // 显示名称，如 claude-3.7-sonnet:thinking
-    pub provider_name: String,   // Provider 配置名称，如 openrouter_default
-    pub provider_type: String,   // Provider 类型，如 openrouter
+    pub id: String,              // Unique identifier: provider_name::model_id
+    pub model_id: String,        // Actual model ID, e.g., anthropic/claude-3.7-sonnet:thinking
+    pub model_name: String,      // Display name, e.g., claude-3.7-sonnet:thinking
+    pub provider_name: String,   // Provider config name, e.g., openrouter_default
+    pub provider_type: String,   // Provider type, e.g., openrouter
 }
 
 #[tauri::command]
@@ -248,12 +248,12 @@ pub fn list_enabled_models(state: State<LLMProviderState>) -> Result<Vec<Enabled
     let mut enabled_models = Vec::new();
     
     for provider in providers {
-        // 只处理 enabled 的 provider
+        // Only process enabled providers
         if !provider.enabled {
             continue;
         }
         
-        // 解析 enabled_models
+        // Parse enabled_models
         if let Some(models_json) = &provider.enabled_models {
             match serde_json::from_str::<Vec<String>>(models_json) {
                 Ok(model_ids) => {
@@ -280,6 +280,7 @@ pub fn list_enabled_models(state: State<LLMProviderState>) -> Result<Vec<Enabled
     
     Ok(enabled_models)
 }
+
 
 
 
