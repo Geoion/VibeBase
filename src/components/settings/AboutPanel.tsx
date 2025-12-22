@@ -26,7 +26,7 @@ export default function AboutPanel() {
   const [checking, setChecking] = useState(false);
   const [updateInfo, setUpdateInfo] = useState<VersionInfo | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [version, setVersion] = useState("0.1.0");
+  const [version, setVersion] = useState("0.1.4");
   const [isInstalling, setIsInstalling] = useState(false);
 
   // Get application version
