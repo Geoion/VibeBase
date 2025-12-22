@@ -31,6 +31,8 @@ export default defineConfig(async () => ({
         variables: path.resolve(__dirname, "variables.html"),
         settings: path.resolve(__dirname, "settings.html"),
         arena: path.resolve(__dirname, "arena.html"),
+        arenaHistory: path.resolve(__dirname, "arena-history.html"),
+        arenaStatistics: path.resolve(__dirname, "arena-statistics.html"),
       },
     },
   },
