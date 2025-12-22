@@ -634,7 +634,7 @@ impl GitService {
     }
 
     // Get remote callbacks for authentication with timeout support
-    fn get_remote_callbacks(&self, config: &GitConfig) -> Result<RemoteCallbacks> {
+    fn get_remote_callbacks(&self, config: &GitConfig) -> Result<RemoteCallbacks<'_>> {
         let mut callbacks = RemoteCallbacks::new();
         let config_clone = config.clone();
         
