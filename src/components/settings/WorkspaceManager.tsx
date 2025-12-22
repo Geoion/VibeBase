@@ -130,7 +130,7 @@ export default function WorkspaceManager() {
             const gitSummary = await invoke<GitSummary>("get_workspace_git_summary", {
               workspacePath: project.path,
             });
-            console.log(`Git summary for ${project.path}:`, gitSummary);
+            console.log(`Git summary for ${project.path}:`, JSON.stringify(gitSummary, null, 2));
             gitMap.set(project.path, gitSummary);
           } catch (gitError) {
             console.log(`Git not available for ${project.path}:`, gitError);
@@ -277,7 +277,12 @@ export default function WorkspaceManager() {
           const stats = workspaceStats.get(project.path);
           const gitSummary = gitSummaries.get(project.path);
           
-          console.log(`Rendering project ${project.name}:`, { stats, gitSummary });
+          console.log(`Rendering project ${project.name}:`, {
+            path: project.path,
+            hasStats: !!stats,
+            hasGitSummary: !!gitSummary,
+            gitSummary: gitSummary ? JSON.stringify(gitSummary) : 'null'
+          });
 
           return (
             <div
