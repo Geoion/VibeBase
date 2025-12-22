@@ -56,10 +56,19 @@ export default function GitPanel({ onClose }: GitPanelProps) {
     setMessage("");
     try {
       const result = await pull();
-      setMessage(result.message);
-      await loadData();
+      if (result.success) {
+        setMessage("✅ " + result.message);
+        await loadData();
+      } else {
+        setMessage("ℹ️ " + result.message);
+      }
     } catch (error: any) {
-      setMessage(`❌ ${t("git.pullFailed")}: ${error.message}`);
+      const errorMsg = error.message || error.toString();
+      if (errorMsg.includes("SSH") || errorMsg.includes("ssh")) {
+        setMessage(`❌ SSH 连接失败。请检查：\n1. SSH Key 路径是否正确 (~/.ssh/id_rsa)\n2. Remote URL 是否配置\n3. SSH Key 是否有权限访问仓库`);
+      } else {
+        setMessage(`❌ ${t("git.pullFailed")}: ${errorMsg}`);
+      }
     } finally {
       setLoading(false);
     }
@@ -70,21 +79,34 @@ export default function GitPanel({ onClose }: GitPanelProps) {
     setMessage("");
     try {
       const result = await push();
-      setMessage(result.message);
-      await loadData();
+      if (result.success) {
+        setMessage("✅ " + result.message);
+        await loadData();
+      } else {
+        setMessage("ℹ️ " + result.message);
+      }
     } catch (error: any) {
-      setMessage(`❌ ${t("git.pushFailed")}: ${error.message}`);
+      const errorMsg = error.message || error.toString();
+      if (errorMsg.includes("SSH") || errorMsg.includes("ssh")) {
+        setMessage(`❌ SSH 连接失败。请检查：\n1. SSH Key 路径是否正确\n2. Remote URL 是否配置\n3. SSH Key 是否有权限访问仓库`);
+      } else {
+        setMessage(`❌ ${t("git.pushFailed")}: ${errorMsg}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   const handleSwitchBranch = async (branchName: string) => {
+    // Don't switch if already on this branch
+    if (branchName === (currentBranch || status?.current_branch)) {
+      return;
+    }
+    
     setLoading(true);
     try {
       await checkoutBranch(branchName);
       await loadData();
-      setShowBranches(false);
     } catch (error: any) {
       setMessage(`❌ ${t("git.branchSwitchFailed")}: ${error.message}`);
     } finally {
@@ -237,11 +259,13 @@ export default function GitPanel({ onClose }: GitPanelProps) {
                 disabled={loading}
                 className="px-3 py-1.5 bg-primary/10 text-primary text-sm rounded border border-primary/20 hover:bg-primary/20 transition-colors disabled:opacity-50 cursor-pointer"
               >
-                {branches.map((branch) => (
-                  <option key={branch.name} value={branch.name}>
-                    {branch.name} {branch.is_current ? "●" : ""}
-                  </option>
-                ))}
+                {branches
+                  .filter((branch) => !branch.is_remote)
+                  .map((branch) => (
+                    <option key={branch.name} value={branch.name}>
+                      {branch.name}
+                    </option>
+                  ))}
               </select>
             </div>
             <div className="flex items-center gap-2">
