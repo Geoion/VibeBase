@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Sparkles, Palette, Languages } from "lucide-react";
+import { Sparkles, Palette, Languages, Clock, Check } from "lucide-react";
 import { invoke } from "@tauri-apps/api/tauri";
 
 interface EnabledModel {
@@ -11,14 +11,18 @@ interface EnabledModel {
   provider_type: string;   // Provider type
 }
 
+type SaveStatus = "idle" | "saving" | "saved";
+
 export default function GitSettingsPanel() {
   const { t, i18n } = useTranslation();
   
   const [commitMessageModel, setCommitMessageModel] = useState("");
   const [commitMessageStyle, setCommitMessageStyle] = useState("conventional");
   const [commitMessageLanguage, setCommitMessageLanguage] = useState("");
+  const [operationTimeout, setOperationTimeout] = useState("30");
   const [models, setModels] = useState<EnabledModel[]>([]);
   const [loading, setLoading] = useState(true);
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
   useEffect(() => {
     loadSettings();
@@ -30,10 +34,12 @@ export default function GitSettingsPanel() {
       const model = await invoke<string>("get_app_setting", { key: "git.commit_message_model" }).catch(() => "");
       const style = await invoke<string>("get_app_setting", { key: "git.commit_message_style" }).catch(() => "conventional");
       const language = await invoke<string>("get_app_setting", { key: "git.commit_message_language" }).catch(() => "auto");
+      const timeout = await invoke<string>("get_app_setting", { key: "git.operation_timeout_seconds" }).catch(() => "30");
       
       setCommitMessageModel(model);
       setCommitMessageStyle(style);
       setCommitMessageLanguage(language || "auto");
+      setOperationTimeout(timeout || "30");
     } catch (error) {
       console.error("Failed to load Git settings:", error);
     } finally {
@@ -50,10 +56,21 @@ export default function GitSettingsPanel() {
     }
   };
 
+  const showSaveStatus = () => {
+    setSaveStatus("saving");
+    setTimeout(() => {
+      setSaveStatus("saved");
+      setTimeout(() => {
+        setSaveStatus("idle");
+      }, 2000);
+    }, 300);
+  };
+
   const handleModelChange = async (value: string) => {
     setCommitMessageModel(value);
     try {
       await invoke("save_app_setting", { key: "git.commit_message_model", value });
+      showSaveStatus();
     } catch (error) {
       console.error("Failed to save model setting:", error);
     }
@@ -63,6 +80,7 @@ export default function GitSettingsPanel() {
     setCommitMessageStyle(value);
     try {
       await invoke("save_app_setting", { key: "git.commit_message_style", value });
+      showSaveStatus();
     } catch (error) {
       console.error("Failed to save style setting:", error);
     }
@@ -72,8 +90,25 @@ export default function GitSettingsPanel() {
     setCommitMessageLanguage(value);
     try {
       await invoke("save_app_setting", { key: "git.commit_message_language", value });
+      showSaveStatus();
     } catch (error) {
       console.error("Failed to save language setting:", error);
+    }
+  };
+
+  const handleTimeoutChange = async (value: string) => {
+    // 验证输入是否为有效数字
+    const numValue = parseInt(value);
+    if (isNaN(numValue) || numValue < 5 || numValue > 300) {
+      return; // 忽略无效输入
+    }
+    
+    setOperationTimeout(value);
+    try {
+      await invoke("save_app_setting", { key: "git.operation_timeout_seconds", value });
+      showSaveStatus();
+    } catch (error) {
+      console.error("Failed to save timeout setting:", error);
     }
   };
 
@@ -86,7 +121,23 @@ export default function GitSettingsPanel() {
   }
 
   return (
-    <div className="flex-1 overflow-auto p-8 max-w-3xl mx-auto w-full space-y-8">
+    <div className="flex-1 overflow-auto p-8 max-w-3xl mx-auto w-full space-y-8 relative">
+      {/* Auto-save status indicator */}
+      {saveStatus !== "idle" && (
+        <div className="fixed top-4 right-4 z-50">
+          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-lg transition-all duration-300 ${
+            saveStatus === "saved" 
+              ? "bg-green-500/20 border border-green-500/30 text-green-600 dark:text-green-400" 
+              : "bg-blue-500/20 border border-blue-500/30 text-blue-600 dark:text-blue-400"
+          }`}>
+            <Check className="w-4 h-4" />
+            <span className="text-sm font-medium">
+              {saveStatus === "saving" ? t("settings.saving") : t("settings.autoSaved")}
+            </span>
+          </div>
+        </div>
+      )}
+
       <div>
         <h3 className="text-lg font-semibold mb-6">{t("git.commitMessageSettings")}</h3>
 
@@ -159,6 +210,30 @@ export default function GitSettingsPanel() {
               <option value="zh-Hant">繁體中文</option>
               <option value="en-US">English</option>
             </select>
+          </div>
+
+          {/* Operation Timeout */}
+          <div className="flex items-start justify-between py-4 border-b border-border">
+            <div className="flex items-start gap-3 flex-1">
+              <Clock className="w-5 h-5 mt-0.5 text-muted-foreground" />
+              <div>
+                <h4 className="font-medium">{t("git.operationTimeout")}</h4>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {t("git.operationTimeoutDescription")}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                min="5"
+                max="300"
+                value={operationTimeout}
+                onChange={(e) => handleTimeoutChange(e.target.value)}
+                className="px-3 py-2 bg-secondary rounded-lg border border-border text-sm w-24 text-right"
+              />
+              <span className="text-sm text-muted-foreground">{t("git.seconds")}</span>
+            </div>
           </div>
         </div>
       </div>
