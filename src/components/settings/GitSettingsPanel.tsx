@@ -16,6 +16,7 @@ export default function GitSettingsPanel() {
   
   const [commitMessageModel, setCommitMessageModel] = useState("");
   const [commitMessageStyle, setCommitMessageStyle] = useState("conventional");
+  const [commitMessageLanguage, setCommitMessageLanguage] = useState("");
   const [models, setModels] = useState<EnabledModel[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -24,28 +25,15 @@ export default function GitSettingsPanel() {
     loadModels();
   }, []);
 
-  // Sync language with app language
-  useEffect(() => {
-    const syncLanguage = async () => {
-      try {
-        await invoke("save_app_setting", { 
-          key: "git.commit_message_language", 
-          value: i18n.language 
-        });
-      } catch (error) {
-        console.error("Failed to sync language:", error);
-      }
-    };
-    syncLanguage();
-  }, [i18n.language]);
-
   const loadSettings = async () => {
     try {
       const model = await invoke<string>("get_app_setting", { key: "git.commit_message_model" }).catch(() => "");
       const style = await invoke<string>("get_app_setting", { key: "git.commit_message_style" }).catch(() => "conventional");
+      const language = await invoke<string>("get_app_setting", { key: "git.commit_message_language" }).catch(() => "auto");
       
       setCommitMessageModel(model);
       setCommitMessageStyle(style);
+      setCommitMessageLanguage(language || "auto");
     } catch (error) {
       console.error("Failed to load Git settings:", error);
     } finally {
@@ -77,6 +65,15 @@ export default function GitSettingsPanel() {
       await invoke("save_app_setting", { key: "git.commit_message_style", value });
     } catch (error) {
       console.error("Failed to save style setting:", error);
+    }
+  };
+
+  const handleLanguageChange = async (value: string) => {
+    setCommitMessageLanguage(value);
+    try {
+      await invoke("save_app_setting", { key: "git.commit_message_language", value });
+    } catch (error) {
+      console.error("Failed to save language setting:", error);
     }
   };
 
@@ -141,20 +138,27 @@ export default function GitSettingsPanel() {
             </select>
           </div>
 
-          {/* Current Language (Read-only, synced with app) */}
+          {/* Generation Language */}
           <div className="flex items-start justify-between py-4 border-b border-border">
             <div className="flex items-start gap-3 flex-1">
               <Languages className="w-5 h-5 mt-0.5 text-muted-foreground" />
               <div>
                 <h4 className="font-medium">{t("git.generationLanguage")}</h4>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Language for generated commit messages (synced with app language)
+                  Language for generated commit messages (can be different from app language)
                 </p>
               </div>
             </div>
-            <div className="px-3 py-2 bg-secondary/50 rounded-lg border border-border text-sm min-w-[240px] text-muted-foreground">
-              {i18n.language === "zh-CN" ? "简体中文" : i18n.language === "zh-TW" ? "繁體中文" : "English"}
-            </div>
+            <select
+              value={commitMessageLanguage}
+              onChange={(e) => handleLanguageChange(e.target.value)}
+              className="px-3 py-2 bg-secondary rounded-lg border border-border text-sm min-w-[240px]"
+            >
+              <option value="auto">{t("git.languageFollowApp")}</option>
+              <option value="zh-Hans">简体中文</option>
+              <option value="zh-Hant">繁體中文</option>
+              <option value="en-US">English</option>
+            </select>
           </div>
         </div>
       </div>
@@ -168,7 +172,7 @@ export default function GitSettingsPanel() {
             <li>• The AI analyzes your git diff and generates an appropriate commit message</li>
             <li>• You can edit the generated message before committing</li>
             <li>• Make sure to configure your LLM providers in the Providers tab first</li>
-            <li>• The language will automatically match your app's language setting</li>
+            <li>• You can choose a different language for commit messages than your app interface</li>
           </ul>
         </div>
       </div>
