@@ -3,6 +3,7 @@ import { invoke } from "@tauri-apps/api/tauri";
 import { useTranslation } from "react-i18next";
 import { X } from "lucide-react";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
+import AutoSaveIndicator from "../ui/AutoSaveIndicator";
 
 interface PromptMetadata {
   id: string;
@@ -24,7 +25,7 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
   const { workspace } = useWorkspaceStore();
   const [metadata, setMetadata] = useState<PromptMetadata | null>(null);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
   const [providers, setProviders] = useState<string[]>([]);
 
   // Form state
@@ -138,7 +139,7 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
       }
 
       try {
-        setSaving(true);
+        setSaveStatus("saving");
 
         // Build parameters JSON
         const parameters: Record<string, number> = {};
@@ -164,10 +165,16 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
         if (pendingSaveDataRef.current?.filePath === savedFilePath) {
           pendingSaveDataRef.current = null;
         }
+
+        
+        // Update save status
+        setSaveStatus("saved");
+        setTimeout(() => {
+          setSaveStatus("idle");
+        }, 2000);
       } catch (error) {
         console.error("Failed to auto-save metadata:", error);
-      } finally {
-        setSaving(false);
+        setSaveStatus("idle");
       }
     }, 500);
 
@@ -282,6 +289,9 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
 
   return (
     <div className="flex flex-col h-full">
+      {/* Auto-save status indicator */}
+      <AutoSaveIndicator status={saveStatus} />
+      
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
         {/* Tags */}
@@ -454,15 +464,6 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
             </div>
           </div>
         )}
-      </div>
-
-      {/* Footer - Auto save status */}
-      <div className="px-4 py-2 border-t border-border">
-        <p className="text-xs text-muted-foreground text-center">
-          {saving
-            ? t("metadata.auto_saving", "自动保存中...")
-            : t("metadata.auto_saved", "自动保存")}
-        </p>
       </div>
     </div>
   );
