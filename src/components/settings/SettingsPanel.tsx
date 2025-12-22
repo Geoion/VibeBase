@@ -421,8 +421,8 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
                         onChange={(e) => handleLanguageChange(e.target.value)}
                         className="px-3 py-2 bg-secondary rounded-lg border border-border text-sm min-w-[160px]"
                       >
-                        <option value="zh-CN">{t("language.zh-CN")}</option>
-                        <option value="zh-TW">{t("language.zh-TW")}</option>
+                        <option value="zh-Hans">{t("language.zh-Hans")}</option>
+                        <option value="zh-Hant">{t("language.zh-Hant")}</option>
                         <option value="en-US">{t("language.en-US")}</option>
                       </select>
                     </div>
@@ -493,7 +493,7 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
                 </div>
               </div>
             )}
-            {activeTab !== "providers" && activeTab !== "arena" && activeTab !== "general" && activeTab !== "workspace" && activeTab !== "about" && (
+            {activeTab !== "providers" && activeTab !== "arena" && activeTab !== "general" && activeTab !== "git" && activeTab !== "workspace" && activeTab !== "about" && (
               <div className="flex-1 flex items-center justify-center">
                 <p className="text-muted-foreground">{menuItems.find(m => m.id === activeTab)?.label} settings coming soon...</p>
               </div>
