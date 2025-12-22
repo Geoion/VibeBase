@@ -1,10 +1,12 @@
 use crate::models::git::*;
-use crate::services::database::ProjectDatabase;
+use crate::services::database::{ProjectDatabase, AppDatabase};
 use crate::services::keychain::KeychainService;
 use anyhow::{anyhow, Result};
 use git2::{Repository, Signature, IndexAddOption, Cred, RemoteCallbacks, FetchOptions, PushOptions, BranchType};
 use std::path::Path;
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH, Instant};
+use std::env;
+use std::sync::{Arc, Mutex};
 
 pub struct GitService {
     workspace_path: String,
@@ -14,6 +16,21 @@ impl GitService {
     pub fn new(workspace_path: &str) -> Self {
         Self {
             workspace_path: workspace_path.to_string(),
+        }
+    }
+
+    // Get operation timeout from app settings (global configuration)
+    fn get_operation_timeout(&self) -> u32 {
+        match AppDatabase::new() {
+            Ok(db) => {
+                match db.get_app_setting("git.operation_timeout_seconds") {
+                    Ok(value) => {
+                        value.parse::<u32>().unwrap_or(30)
+                    }
+                    Err(_) => 30, // Default 30 seconds
+                }
+            }
+            Err(_) => 30, // Default 30 seconds
         }
     }
 
@@ -340,7 +357,7 @@ impl GitService {
         let remote_name = config.remote_name.as_deref().unwrap_or("origin");
         
         // Check if remote exists
-        let mut remote = match repo.find_remote(remote_name) {
+        let remote = match repo.find_remote(remote_name) {
             Ok(r) => r,
             Err(_) => {
                 return Ok(PullResult {
@@ -351,10 +368,33 @@ impl GitService {
                 });
             }
         };
+        
+        // 对于 GitHub SSH URL，临时修改为使用 ssh.github.com:443 以绕过 ProxyCommand
+        let original_url = remote.url().map(|s| s.to_string());
+        let needs_url_fix = if let Some(url) = &original_url {
+            url.starts_with("git@github.com:")
+        } else {
+            false
+        };
+        
+        if needs_url_fix {
+            if let Some(url) = &original_url {
+                // 将 git@github.com:user/repo.git 转换为 ssh://git@ssh.github.com:443/user/repo.git
+                let new_url = url.replace("git@github.com:", "ssh://git@ssh.github.com:443/");
+                repo.remote_set_url(remote_name, &new_url)?;
+            }
+        }
+        
         // Get current branch
         let head = match repo.head() {
             Ok(h) => h,
             Err(_) => {
+                // 恢复原始 URL
+                if needs_url_fix {
+                    if let Some(url) = &original_url {
+                        let _ = repo.remote_set_url(remote_name, url);
+                    }
+                }
                 return Ok(PullResult {
                     success: false,
                     message: "Cannot pull: no commits yet. Make an initial commit first.".to_string(),
@@ -366,12 +406,25 @@ impl GitService {
         
         let branch_name = head.shorthand().unwrap_or("main");
         
+        // 重新获取 remote（因为 URL 已更改）
+        let mut remote = repo.find_remote(remote_name)?;
+        
         let callbacks = self.get_remote_callbacks(&config)?;
         let mut fetch_options = FetchOptions::new();
         fetch_options.remote_callbacks(callbacks);
         
         // Fetch from remote
-        remote.fetch(&[branch_name], Some(&mut fetch_options), None)?;
+        let fetch_result = remote.fetch(&[branch_name], Some(&mut fetch_options), None);
+        
+        // 恢复原始 URL
+        if needs_url_fix {
+            if let Some(url) = &original_url {
+                let _ = repo.remote_set_url(remote_name, url);
+            }
+        }
+        
+        // 检查 fetch 结果
+        fetch_result?;
         
         // Get the upstream branch
         let fetch_head = match repo.find_reference("FETCH_HEAD") {
@@ -430,8 +483,8 @@ impl GitService {
         
         let remote_name = config.remote_name.as_deref().unwrap_or("origin");
         
-        // Check if remote exists
-        let mut remote = match repo.find_remote(remote_name) {
+        // Check if remote exists and get its URL
+        let remote = match repo.find_remote(remote_name) {
             Ok(r) => r,
             Err(_) => {
                 return Ok(PushResult {
@@ -441,6 +494,26 @@ impl GitService {
                 });
             }
         };
+        
+        // 对于 GitHub SSH URL，临时修改为使用 ssh.github.com:443 以绕过 ProxyCommand
+        let original_url = remote.url().map(|s| s.to_string());
+        let needs_url_fix = if let Some(url) = &original_url {
+            url.starts_with("git@github.com:")
+        } else {
+            false
+        };
+        
+        if needs_url_fix {
+            if let Some(url) = &original_url {
+                // 将 git@github.com:user/repo.git 转换为 ssh://git@ssh.github.com:443/user/repo.git
+                let new_url = url.replace("git@github.com:", "ssh://git@ssh.github.com:443/");
+                repo.remote_set_url(remote_name, &new_url)?;
+            }
+        }
+        
+        // 重新获取 remote（因为 URL 已更改）
+        let mut remote = repo.find_remote(remote_name)?;
+        
         let callbacks = self.get_remote_callbacks(&config)?;
         let mut push_options = PushOptions::new();
         push_options.remote_callbacks(callbacks);
@@ -449,13 +522,27 @@ impl GitService {
         let branch_name = head.shorthand().unwrap_or("main");
         let refspec = format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name);
         
-        remote.push(&[&refspec], Some(&mut push_options))?;
+        let result = remote.push(&[&refspec], Some(&mut push_options));
         
-        Ok(PushResult {
-            success: true,
-            message: "Push successful".to_string(),
-            commits_pushed: 1, // Simplified
-        })
+        // 恢复原始 URL
+        if needs_url_fix {
+            if let Some(url) = &original_url {
+                let _ = repo.remote_set_url(remote_name, url);
+            }
+        }
+        
+        match result {
+            Ok(_) => {
+                Ok(PushResult {
+                    success: true,
+                    message: "Push successful".to_string(),
+                    commits_pushed: 1, // Simplified
+                })
+            }
+            Err(e) => {
+                Err(anyhow!("Push failed: {}", e))
+            }
+        }
     }
 
     // Get commit history
@@ -546,17 +633,54 @@ impl GitService {
         })
     }
 
-    // Get remote callbacks for authentication
+    // Get remote callbacks for authentication with timeout support
     fn get_remote_callbacks(&self, config: &GitConfig) -> Result<RemoteCallbacks> {
         let mut callbacks = RemoteCallbacks::new();
         let config_clone = config.clone();
+        
+        // 设置 SSH_AUTH_SOCK 环境变量以使用 1Password SSH Agent
+        if let Ok(sock_path) = env::var("SSH_AUTH_SOCK") {
+            // SSH_AUTH_SOCK 已经设置，保持不变
+            env::set_var("SSH_AUTH_SOCK", sock_path);
+        } else {
+            // 尝试设置 1Password SSH Agent 路径
+            if let Some(home) = dirs_next::home_dir() {
+                let onepassword_sock = home.join("Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock");
+                if onepassword_sock.exists() {
+                    env::set_var("SSH_AUTH_SOCK", onepassword_sock.to_string_lossy().to_string());
+                }
+            }
+        }
+        
+        // 从全局应用设置读取超时时间
+        let timeout_secs = self.get_operation_timeout();
+        let start_time = Arc::new(Mutex::new(Instant::now()));
+        let start_time_clone = start_time.clone();
         
         // Accept all SSH certificates (simplified for now)
         callbacks.certificate_check(|_cert, _host| {
             Ok(git2::CertificateCheckStatus::CertificateOk)
         });
         
+        // 添加进度回调以检查超时
+        callbacks.transfer_progress(move |_stats| {
+            if let Ok(start) = start_time_clone.lock() {
+                if start.elapsed().as_secs() > timeout_secs as u64 {
+                    return false; // 返回 false 会中止操作
+                }
+            }
+            true
+        });
+        
         callbacks.credentials(move |_url, username_from_url, _allowed_types| {
+            let username = username_from_url.unwrap_or("git");
+            
+            // 首先尝试使用 SSH Agent（支持 1Password SSH Agent 等）
+            if let Ok(cred) = Cred::ssh_key_from_agent(username) {
+                return Ok(cred);
+            }
+            
+            // 如果 SSH Agent 失败，尝试配置的认证方法
             if let Some(auth_method) = &config_clone.auth_method {
                 match auth_method.as_str() {
                     "ssh" => {
@@ -579,7 +703,7 @@ impl GitService {
                             };
                             
                             return Cred::ssh_key(
-                                username_from_url.unwrap_or("git"),
+                                username,
                                 None,
                                 &expanded_path,
                                 passphrase.as_deref(),
@@ -597,6 +721,7 @@ impl GitService {
                 }
             }
             
+            // 最后尝试默认凭据
             Cred::default()
         });
         
