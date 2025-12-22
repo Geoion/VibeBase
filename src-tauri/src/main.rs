@@ -20,6 +20,7 @@ use commands::provider_models::*;
 use commands::history::*;
 use commands::metadata::*;
 use commands::update::*;
+use commands::git::*;
 
 use commands::config::AppSettingsState;
 
@@ -29,12 +30,14 @@ fn main() {
     let llm_provider_state = LLMProviderState::new();
     let variables_state = VariablesState::new(app_db);
     let app_settings_state = AppSettingsState::new();
+    let git_state = GitState::new();
 
     tauri::Builder::default()
         .manage(app_state)
         .manage(llm_provider_state)
         .manage(variables_state)
         .manage(app_settings_state)
+        .manage(git_state)
         .invoke_handler(tauri::generate_handler![
             open_workspace,
             list_prompts,
@@ -105,6 +108,20 @@ fn main() {
             check_for_updates,
             install_update,
             get_app_version,
+            get_git_config,
+            save_git_config,
+            get_git_status,
+            list_branches,
+            checkout_branch,
+            create_branch,
+            stage_files,
+            commit_changes,
+            pull_changes,
+            push_changes,
+            get_commit_history,
+            get_git_diff,
+            get_workspace_git_summary,
+            generate_commit_message,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
