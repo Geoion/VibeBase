@@ -1,8 +1,9 @@
 use crate::models::git::*;
 use crate::services::git_service::GitService;
 use crate::services::keychain::KeychainService;
-use tauri::State;
 use std::sync::Mutex;
+use git2::Config;
+use serde::{Serialize, Deserialize};
 
 pub struct GitState {
     pub current_workspace: Mutex<Option<String>>,
@@ -14,6 +15,12 @@ impl GitState {
             current_workspace: Mutex::new(None),
         }
     }
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SystemGitConfig {
+    pub user_name: Option<String>,
+    pub user_email: Option<String>,
 }
 
 #[tauri::command]
@@ -135,5 +142,27 @@ pub async fn generate_commit_message(
     // For now, return a placeholder
     let message = format!("chore: update files\n\nGenerated from {} lines of diff", diff.lines().count());
     Ok(message)
+}
+
+#[tauri::command]
+pub async fn get_system_git_config() -> Result<SystemGitConfig, String> {
+    match Config::open_default() {
+        Ok(config) => {
+            let user_name = config.get_string("user.name").ok();
+            let user_email = config.get_string("user.email").ok();
+            
+            Ok(SystemGitConfig {
+                user_name,
+                user_email,
+            })
+        }
+        Err(e) => Err(format!("Failed to read git config: {}", e))
+    }
+}
+
+#[tauri::command]
+pub async fn init_git_repository(workspace_path: String) -> Result<(), String> {
+    let service = GitService::new(&workspace_path);
+    service.init_repo().map_err(|e| e.to_string())
 }
 
