@@ -6,6 +6,7 @@ use git2::Config;
 use serde::{Serialize, Deserialize};
 
 pub struct GitState {
+    #[allow(dead_code)]
     pub current_workspace: Mutex<Option<String>>,
 }
 
