@@ -302,16 +302,32 @@ impl GitService {
         let tree_id = index.write_tree()?;
         let tree = repo.find_tree(tree_id)?;
         
-        let parent_commit = repo.head()?.peel_to_commit()?;
-        
-        let oid = repo.commit(
-            Some("HEAD"),
-            &signature,
-            &signature,
-            message,
-            &tree,
-            &[&parent_commit],
-        )?;
+        // Check if this is the first commit (unborn branch)
+        let oid = match repo.head() {
+            Ok(head) => {
+                // Not the first commit, has parent
+                let parent_commit = head.peel_to_commit()?;
+                repo.commit(
+                    Some("HEAD"),
+                    &signature,
+                    &signature,
+                    message,
+                    &tree,
+                    &[&parent_commit],
+                )?
+            }
+            Err(_) => {
+                // First commit (unborn branch), no parent
+                repo.commit(
+                    Some("HEAD"),
+                    &signature,
+                    &signature,
+                    message,
+                    &tree,
+                    &[],
+                )?
+            }
+        };
         
         Ok(oid.to_string())
     }
