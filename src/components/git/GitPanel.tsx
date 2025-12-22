@@ -298,7 +298,7 @@ export default function GitPanel({ onClose }: GitPanelProps) {
             </button>
             <button
               onClick={handlePush}
-              disabled={loading || status.ahead === 0}
+              disabled={loading}
               className="px-3 py-1.5 bg-secondary hover:bg-accent rounded transition-colors disabled:opacity-50 flex items-center gap-2"
             >
               <Upload className="w-4 h-4" />
