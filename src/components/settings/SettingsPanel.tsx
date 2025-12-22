@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
-import { X, Moon, Sun, Languages, Download, Upload, RotateCcw, Monitor, Zap } from "lucide-react";
+import { X, Moon, Sun, Languages, Download, Upload, RotateCcw, Monitor, Zap, GitBranch } from "lucide-react";
 import { Settings, Package, Plug, FolderOpen, Keyboard, Info } from "lucide-react";
 import LLMProviderManager from "./LLMProviderManager";
 import WorkspaceManager from "./WorkspaceManager";
 import AboutPanel from "./AboutPanel";
+import GitSettingsPanel from "./GitSettingsPanel";
 import { appWindow } from "@tauri-apps/api/window";
 import { useTranslation } from "react-i18next";
 import { useThemeStore } from "../../stores/themeStore";
@@ -27,6 +28,7 @@ type SettingsTab =
   | "general"
   | "providers"
   | "arena"
+  | "git"
   | "mcpservers"
   | "workspace"
   | "keybindings"
@@ -151,6 +153,7 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
     { id: "general", label: t("settingsTabs.general"), icon: Settings },
     { id: "providers", label: t("settingsTabs.providers"), icon: Package },
     { id: "arena", label: t("settingsTabs.arena"), icon: Zap },
+    { id: "git", label: t("git.title"), icon: GitBranch },
     { id: "mcpservers", label: t("settingsTabs.mcpservers"), icon: Plug },
     { id: "workspace", label: t("settingsTabs.workspace"), icon: FolderOpen },
     { id: "keybindings", label: t("settingsTabs.keybindings"), icon: Keyboard },
@@ -242,6 +245,7 @@ export default function SettingsPanel({ onClose, isStandaloneWindow = false }: S
           {/* Main Content Area */}
           <div className="flex-1 flex flex-col overflow-hidden">
             {activeTab === "providers" && <LLMProviderManager onSaveStatusChange={setProvidersSaveStatus} />}
+            {activeTab === "git" && <GitSettingsPanel />}
             {activeTab === "arena" && (
               <div className="flex-1 overflow-auto p-8 max-w-3xl mx-auto w-full">
                 <div>
