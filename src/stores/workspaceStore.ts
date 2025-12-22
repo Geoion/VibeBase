@@ -1,4 +1,6 @@
 import { create } from "zustand";
+import { useEditorStore } from "./editorStore";
+import { useGitStore } from "./gitStore";
 
 export interface PromptMetadata {
   id: string;
@@ -38,7 +40,21 @@ interface WorkspaceStore {
 export const useWorkspaceStore = create<WorkspaceStore>((set) => ({
   workspace: null,
   
-  setWorkspace: (workspace) => set({ workspace }),
+  setWorkspace: (workspace) => {
+    // 清理编辑器状态
+    const editorStore = useEditorStore.getState();
+    editorStore.setCurrentFile(null);
+    editorStore.setContent("");
+    editorStore.setDirty(false);
+    editorStore.clearHistoryPreview();
+    
+    // 清理 Git 状态
+    const gitStore = useGitStore.getState();
+    gitStore.reset();
+    
+    // 设置新的工作区
+    set({ workspace });
+  },
   
   toggleFolder: (folderPath) =>
     set((state) => {
