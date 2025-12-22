@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { X, GitBranch, RefreshCw, Upload, Download, GitCommit, History, Settings, CheckSquare, Square } from "lucide-react";
+import { X, GitBranch, RefreshCw, Upload, Download, GitCommit, History, Settings, CheckSquare, Square, FolderGit } from "lucide-react";
 import { useGitStore } from "../../stores/gitStore";
 import CommitDialog from "./CommitDialog";
+import { invoke } from "@tauri-apps/api/tauri";
 
 interface GitPanelProps {
   onClose: () => void;
@@ -11,6 +12,7 @@ interface GitPanelProps {
 export default function GitPanel({ onClose }: GitPanelProps) {
   const { t } = useTranslation();
   const {
+    workspacePath,
     status,
     branches,
     currentBranch,
@@ -26,6 +28,7 @@ export default function GitPanel({ onClose }: GitPanelProps) {
 
   const [showCommitDialog, setShowCommitDialog] = useState(false);
   const [showBranches, setShowBranches] = useState(false);
+  const [showInitConfirm, setShowInitConfirm] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState("");
   const [selectedFiles, setSelectedFiles] = useState<Set<string>>(new Set());
@@ -127,20 +130,96 @@ export default function GitPanel({ onClose }: GitPanelProps) {
     return date.toLocaleDateString();
   };
 
+  const handleInitGit = async () => {
+    if (!workspacePath) return;
+    
+    setLoading(true);
+    try {
+      console.log("Initializing git repository at:", workspacePath);
+      await invoke("init_git_repository", { workspacePath });
+      console.log("Git init successful, reloading data...");
+      
+      setShowInitConfirm(false);
+      
+      // Wait a bit for filesystem to update
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Reload data
+      try {
+        await refreshStatus();
+        await loadBranches();
+        await loadCommitHistory(10);
+        console.log("Data reloaded successfully");
+      } catch (reloadError) {
+        console.error("Failed to reload data:", reloadError);
+      }
+      
+      setMessage("✅ " + t("git.initSuccess"));
+    } catch (error: any) {
+      console.error("Git init failed:", error);
+      setMessage(`❌ ${t("git.initFailed")}: ${error}`);
+      setShowInitConfirm(false);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   if (!status) {
     return (
-      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-        <div className="bg-card border border-border rounded-lg p-8 text-center">
-          <p className="text-muted-foreground">{t("git.gitNotInitialized")}</p>
-          <p className="text-sm text-muted-foreground mt-2">{t("git.gitNotInitializedDesc")}</p>
-          <button
-            onClick={onClose}
-            className="mt-4 px-4 py-2 bg-primary text-primary-foreground rounded-lg"
-          >
-            {t("actions.close")}
-          </button>
+      <>
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-card border border-border rounded-lg p-8 text-center max-w-md">
+            <FolderGit className="w-16 h-16 mx-auto mb-4 text-muted-foreground" />
+            <h3 className="text-lg font-semibold mb-2">{t("git.gitNotInitialized")}</h3>
+            <p className="text-sm text-muted-foreground mb-6">{t("git.gitNotInitializedDesc")}</p>
+            <div className="flex gap-3 justify-center">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 hover:bg-accent rounded-lg transition-colors"
+              >
+                {t("actions.cancel")}
+              </button>
+              <button
+                onClick={() => setShowInitConfirm(true)}
+                className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
+              >
+                {t("git.initRepository")}
+              </button>
+            </div>
+          </div>
         </div>
-      </div>
+
+        {/* Init Confirm Dialog */}
+        {showInitConfirm && (
+          <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[60]">
+            <div className="bg-card border border-border rounded-lg p-6 max-w-md">
+              <h3 className="text-lg font-semibold mb-3">{t("git.confirmInit")}</h3>
+              <p className="text-sm text-muted-foreground mb-4">
+                {t("git.confirmInitDesc")}
+              </p>
+              <div className="bg-secondary/50 rounded p-3 mb-4">
+                <code className="text-xs">git init {workspacePath}</code>
+              </div>
+              <div className="flex gap-3 justify-end">
+                <button
+                  onClick={() => setShowInitConfirm(false)}
+                  disabled={loading}
+                  className="px-4 py-2 hover:bg-accent rounded-lg transition-colors"
+                >
+                  {t("actions.cancel")}
+                </button>
+                <button
+                  onClick={handleInitGit}
+                  disabled={loading}
+                  className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors disabled:opacity-50"
+                >
+                  {loading ? t("git.initializing") : t("actions.confirm")}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+      </>
     );
   }
 
