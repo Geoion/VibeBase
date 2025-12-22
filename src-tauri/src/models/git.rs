@@ -121,6 +121,7 @@ impl Default for GitConfig {
             remote_url: None,
             is_configured: false,
             last_fetch: None,
+            operation_timeout_seconds: Some(30), // Default 30 seconds timeout
             created_at: now,
             updated_at: now,
         }
