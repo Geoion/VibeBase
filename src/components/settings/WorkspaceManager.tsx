@@ -130,9 +130,10 @@ export default function WorkspaceManager() {
             const gitSummary = await invoke<GitSummary>("get_workspace_git_summary", {
               workspacePath: project.path,
             });
+            console.log(`Git summary for ${project.path}:`, gitSummary);
             gitMap.set(project.path, gitSummary);
           } catch (gitError) {
-            // Git not configured, skip
+            console.log(`Git not available for ${project.path}:`, gitError);
           }
         } catch (error) {
           console.error(`Failed to load stats for ${project.path}:`, error);
@@ -205,7 +206,7 @@ export default function WorkspaceManager() {
 
   const formatDate = (timestamp: number): string => {
     const date = new Date(timestamp * 1000);
-    const locale = i18n.language === "zh-CN" ? "zh-CN" : i18n.language === "zh-TW" ? "zh-TW" : "en-US";
+    const locale = i18n.language === "zh-Hans" ? "zh-CN" : i18n.language === "zh-Hant" ? "zh-TW" : "en-US";
     return date.toLocaleDateString(locale, {
       year: "numeric",
       month: "2-digit",
@@ -275,6 +276,8 @@ export default function WorkspaceManager() {
         {recentProjects.map((project) => {
           const stats = workspaceStats.get(project.path);
           const gitSummary = gitSummaries.get(project.path);
+          
+          console.log(`Rendering project ${project.name}:`, { stats, gitSummary });
 
           return (
             <div
@@ -368,56 +371,63 @@ export default function WorkspaceManager() {
                     </div>
 
                     {/* Git Info */}
-                    {gitSummary && gitSummary.has_git && (
-                      <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
-                        <div className="flex items-center gap-2 mb-2">
-                          <GitBranch className="w-4 h-4 text-primary" />
-                          <span className="font-medium text-primary">{gitSummary.current_branch || "main"}</span>
-                          {gitSummary.changes_count > 0 && (
-                            <span className="text-yellow-500 text-sm">● {gitSummary.changes_count}</span>
-                          )}
-                          {gitSummary.ahead > 0 && (
-                            <span className="text-blue-500 text-sm">↑ {gitSummary.ahead}</span>
-                          )}
-                          {gitSummary.behind > 0 && (
-                            <span className="text-orange-500 text-sm">↓ {gitSummary.behind}</span>
+                    {gitSummary ? (
+                      gitSummary.has_git ? (
+                        <div className="bg-primary/5 border border-primary/20 rounded-lg p-4">
+                          <div className="flex items-center gap-2 mb-2">
+                            <GitBranch className="w-4 h-4 text-primary" />
+                            <span className="font-medium text-primary">{gitSummary.current_branch || "main"}</span>
+                            {gitSummary.changes_count > 0 && (
+                              <span className="text-yellow-500 text-sm">● {gitSummary.changes_count}</span>
+                            )}
+                            {gitSummary.ahead > 0 && (
+                              <span className="text-blue-500 text-sm">↑ {gitSummary.ahead}</span>
+                            )}
+                            {gitSummary.behind > 0 && (
+                              <span className="text-orange-500 text-sm">↓ {gitSummary.behind}</span>
+                            )}
+                          </div>
+                          {gitSummary.remote_url && (
+                            <p className="text-xs text-muted-foreground truncate">
+                              📍 {gitSummary.remote_url}
+                            </p>
                           )}
                         </div>
-                        {gitSummary.remote_url && (
-                          <p className="text-xs text-muted-foreground truncate">
-                            {gitSummary.remote_url}
-                          </p>
-                        )}
-                      </div>
-                    )}
+                      ) : (
+                        <div className="bg-muted/30 border border-border rounded-lg p-3 flex items-center gap-2">
+                          <GitBranch className="w-4 h-4 text-muted-foreground" />
+                          <span className="text-sm text-muted-foreground">{t("git.notConfigured")}</span>
+                        </div>
+                      )
+                    ) : null}
 
                     {/* Actions */}
                     <div className="flex items-center gap-2 mt-4">
-                      <button
-                        onClick={() => handleCopyPath(project.path)}
+                          <button
+                            onClick={() => handleCopyPath(project.path)}
                         className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-md bg-secondary hover:bg-secondary/80 transition-colors"
-                        title={t("workspaceManager.copyPath")}
-                      >
+                            title={t("workspaceManager.copyPath")}
+                          >
                         {copiedPath === project.path ? (
-                          <>
+                              <>
                             <Check className="w-4 h-4 text-green-500" />
-                            <span className="text-green-500">{t("workspaceManager.pathCopied")}</span>
-                          </>
-                        ) : (
-                          <>
+                                <span className="text-green-500">{t("workspaceManager.pathCopied")}</span>
+                              </>
+                            ) : (
+                              <>
                             <Copy className="w-4 h-4" />
-                            <span>{t("workspaceManager.copyPath")}</span>
-                          </>
-                        )}
-                      </button>
-                      <button
-                        onClick={() => handleShowInFinder(project.path)}
+                                <span>{t("workspaceManager.copyPath")}</span>
+                              </>
+                            )}
+                          </button>
+                          <button
+                            onClick={() => handleShowInFinder(project.path)}
                         className="flex items-center gap-1.5 px-3 py-2 text-sm rounded-md bg-secondary hover:bg-secondary/80 transition-colors"
-                        title={t("workspaceManager.showInFinder")}
-                      >
+                            title={t("workspaceManager.showInFinder")}
+                          >
                         <ExternalLink className="w-4 h-4" />
-                        <span>{t("workspaceManager.showInFinder")}</span>
-                      </button>
+                            <span>{t("workspaceManager.showInFinder")}</span>
+                          </button>
                     </div>
                   </div>
                 ) : (
