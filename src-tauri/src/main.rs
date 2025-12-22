@@ -64,6 +64,8 @@ fn main() {
             get_api_key_for_environment,
             get_arena_settings,
             save_arena_settings,
+            save_app_setting,
+            get_app_setting,
             list_llm_providers,
             save_llm_provider,
             update_llm_provider,
