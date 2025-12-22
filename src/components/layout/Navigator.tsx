@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useWorkspaceStore, Workspace, FileNode } from "../../stores/workspaceStore";
 import { useEditorStore } from "../../stores/editorStore";
+import { useGitStore } from "../../stores/gitStore";
 import { invoke } from "@tauri-apps/api/tauri";
 import { message } from "@tauri-apps/api/dialog";
 import { RefreshCw, FilePlus, FolderPlus, GitBranch } from "lucide-react";
@@ -11,14 +12,19 @@ import DeleteConfirmDialog from "../dialogs/DeleteConfirmDialog";
 import RenameDialog from "../dialogs/RenameDialog";
 import FileTreeNode from "../filetree/FileTreeNode";
 import ContextMenu from "../filetree/ContextMenu";
+import GitConfigDialog from "../git/GitConfigDialog";
+import GitPanel from "../git/GitPanel";
 import { useDragDrop } from "../../hooks/useDragDrop";
 
 export default function Navigator() {
   const { t } = useTranslation();
   const { workspace, setWorkspace } = useWorkspaceStore();
   const { currentFile, setCurrentFile, setContent, setDirty } = useEditorStore();
+  const { setWorkspacePath } = useGitStore();
   const [showNewPromptDialog, setShowNewPromptDialog] = useState(false);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
+  const [showGitConfigDialog, setShowGitConfigDialog] = useState(false);
+  const [showGitPanel, setShowGitPanel] = useState(false);
   const [contextMenu, setContextMenu] = useState<{
     node: FileNode;
     position: { x: number; y: number };
@@ -155,15 +161,26 @@ export default function Navigator() {
   };
 
   const handleGit = async () => {
+    if (!workspace) return;
+    
     try {
-      await message(t("common.featureComingSoon"), { 
-        title: "VibeBase",
-        type: "info" 
-      });
+      // Set workspace path for Git store
+      setWorkspacePath(workspace.path);
+      
+      // Check if Git is configured
+      const config = await invoke('get_git_config', { workspacePath: workspace.path });
+      
+      if (!config || !(config as any).is_configured) {
+        // Show config dialog
+        setShowGitConfigDialog(true);
+      } else {
+        // Show Git panel
+        setShowGitPanel(true);
+      }
     } catch (error) {
-      console.error("Failed to show message:", error);
-      // Fallback to alert
-      alert(t("common.featureComingSoon"));
+      console.error("Failed to check Git config:", error);
+      // Show config dialog on error
+      setShowGitConfigDialog(true);
     }
   };
 
@@ -477,6 +494,15 @@ export default function Navigator() {
           onConfirm={handleConfirmRename}
           onCancel={() => setRenameTarget(null)}
         />
+      )}
+
+      {/* Git Dialogs */}
+      {showGitConfigDialog && (
+        <GitConfigDialog onClose={() => setShowGitConfigDialog(false)} />
+      )}
+
+      {showGitPanel && (
+        <GitPanel onClose={() => setShowGitPanel(false)} />
       )}
     </div>
   );
