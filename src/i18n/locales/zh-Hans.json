@@ -422,6 +422,8 @@
     "token": "访问令牌",
     "userName": "用户名",
     "userEmail": "用户邮箱",
+    "useCustomUserInfo": "使用其他用户信息提交",
+    "usingSystemGitConfig": "使用系统 Git 配置",
     "remoteUrl": "远程仓库地址",
     "commit": "提交",
     "pull": "拉取",

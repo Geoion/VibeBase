@@ -422,6 +422,8 @@
     "token": "Access Token",
     "userName": "User Name",
     "userEmail": "User Email",
+    "useCustomUserInfo": "Use custom user info for commits",
+    "usingSystemGitConfig": "Using system Git config",
     "remoteUrl": "Remote Repository URL",
     "commit": "Commit",
     "pull": "Pull",
