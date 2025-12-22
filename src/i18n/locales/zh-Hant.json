@@ -190,6 +190,11 @@
     "cost_estimate": "預估總成本: ${{cost}}",
     "cost_exceeds_threshold": "成本超過警告閾值 ${{threshold}}"
   },
+  "autoSave": {
+    "justNow": "剛剛",
+    "secondsAgo": "{{count}} 秒前",
+    "minutesAgo": "{{count}} 分鐘前"
+  },
   "settings": {
     "title": "設定",
     "saving": "保存中...",

@@ -189,6 +189,11 @@
     "cost_estimate": "预估总成本: ${{cost}}",
     "cost_exceeds_threshold": "成本超过警告阈值 ${{threshold}}"
   },
+  "autoSave": {
+    "justNow": "刚刚",
+    "secondsAgo": "{{count}} 秒前",
+    "minutesAgo": "{{count}} 分钟前"
+  },
   "settings": {
     "title": "设置",
     "saving": "保存中...",

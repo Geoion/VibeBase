@@ -190,6 +190,11 @@
     "cost_estimate": "Estimated total cost: ${{cost}}",
     "cost_exceeds_threshold": "Cost exceeds warning threshold of ${{threshold}}"
   },
+  "autoSave": {
+    "justNow": "Just now",
+    "secondsAgo": "{{count}}s ago",
+    "minutesAgo": "{{count}}m ago"
+  },
   "settings": {
     "title": "Settings",
     "saving": "Saving...",
