@@ -191,6 +191,8 @@
   },
   "settings": {
     "title": "设置",
+    "saving": "保存中...",
+    "autoSaved": "已自动保存",
     "llmProviders": "LLM 提供商",
     "apiKeys": "API 密钥（旧版）",
     "general": {
@@ -445,6 +447,9 @@
     "languageAuto": "自动检测",
     "languageChinese": "中文",
     "languageEnglish": "英文",
+    "operationTimeout": "操作超时时间",
+    "operationTimeoutDescription": "Git 操作（推送、拉取、获取）的超时时间（秒）。范围：5-300 秒。",
+    "seconds": "秒",
     "testGeneration": "测试生成",
     "notConfigured": "未配置 Git",
     "configureGit": "配置 Git",
