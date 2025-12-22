@@ -6,3 +6,4 @@ pub mod providers;
 pub mod file_tracker;
 pub mod llm_config;
 pub mod validator;
+pub mod git_service;
