@@ -68,6 +68,7 @@ impl KeychainService {
             .map_err(|e| format!("SSH passphrase not found: {}", e))
     }
 
+    #[allow(dead_code)]
     pub fn delete_git_ssh_passphrase(workspace_id: &str) -> Result<(), String> {
         let key = format!("git:ssh_passphrase:{}", workspace_id);
         let entry = Entry::new(SERVICE_NAME, &key)
@@ -103,6 +104,7 @@ impl KeychainService {
             .map_err(|e| format!("Git token not found: {}", e))
     }
 
+    #[allow(dead_code)]
     pub fn delete_git_token(workspace_id: &str) -> Result<(), String> {
         let key = format!("git:token:{}", workspace_id);
         let entry = Entry::new(SERVICE_NAME, &key)
