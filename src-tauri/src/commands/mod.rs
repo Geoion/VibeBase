@@ -11,4 +11,5 @@ pub mod provider_models;
 pub mod history;
 pub mod metadata;
 pub mod update;
+pub mod git;
 
