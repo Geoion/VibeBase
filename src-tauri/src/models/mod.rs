@@ -1,6 +1,7 @@
 pub mod prompt;
 pub mod execution;
 pub mod config;
+pub mod git;
 
 use serde::{Deserialize, Serialize};
 
