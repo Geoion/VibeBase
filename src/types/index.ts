@@ -13,7 +13,7 @@ export interface Workspace {
 
 export type Theme = "light" | "dark" | "system";
 
-export type Locale = "zh-CN" | "en-US" | "zh-TW" | "ja-JP";
+export type Locale = "zh-Hans" | "en-US" | "zh-Hant" | "ja-JP";
 
 
 
