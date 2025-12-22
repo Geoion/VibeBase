@@ -2,9 +2,15 @@ import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { X, Key, Lock, User, Mail, Link as LinkIcon, AlertCircle } from "lucide-react";
 import { useGitStore } from "../../stores/gitStore";
+import { invoke } from "@tauri-apps/api/tauri";
 
 interface GitConfigDialogProps {
   onClose: () => void;
+}
+
+interface SystemGitConfig {
+  user_name: string | null;
+  user_email: string | null;
 }
 
 export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
@@ -12,18 +18,30 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
   const { workspacePath, loadConfig, saveConfig } = useGitStore();
   
   const [authMethod, setAuthMethod] = useState<"none" | "ssh" | "token">("none");
-  const [sshKeyPath, setSshKeyPath] = useState("");
+  const [sshKeyPath, setSshKeyPath] = useState("~/.ssh/id_rsa");
   const [sshPassphrase, setSshPassphrase] = useState("");
   const [gitToken, setGitToken] = useState("");
+  const [useCustomUserInfo, setUseCustomUserInfo] = useState(false);
   const [userName, setUserName] = useState("");
   const [userEmail, setUserEmail] = useState("");
+  const [systemGitConfig, setSystemGitConfig] = useState<SystemGitConfig>({ user_name: null, user_email: null });
   const [remoteUrl, setRemoteUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
 
   useEffect(() => {
     loadExistingConfig();
+    loadSystemGitConfig();
   }, []);
+
+  const loadSystemGitConfig = async () => {
+    try {
+      const config = await invoke<SystemGitConfig>("get_system_git_config");
+      setSystemGitConfig(config);
+    } catch (err) {
+      console.error("Failed to load system git config:", err);
+    }
+  };
 
   const loadExistingConfig = async () => {
     try {
@@ -51,7 +69,7 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
         return;
       }
 
-      if (!userName || !userEmail) {
+      if (useCustomUserInfo && (!userName || !userEmail)) {
         setError(t("git.userName") + " and " + t("git.userEmail") + " are required");
         setSaving(false);
         return;
@@ -65,8 +83,8 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
         ssh_key_path: authMethod === "ssh" ? sshKeyPath : null,
         ssh_passphrase_key: authMethod === "ssh" ? `${workspacePath?.replace(/[/\\:]/g, "_")}` : null,
         github_token_key: authMethod === "token" ? `${workspacePath?.replace(/[/\\:]/g, "_")}` : null,
-        git_user_name: userName,
-        git_user_email: userEmail,
+        git_user_name: useCustomUserInfo ? userName : null,
+        git_user_email: useCustomUserInfo ? userEmail : null,
         remote_name: "origin",
         remote_url: remoteUrl || null,
         is_configured: true,
@@ -118,32 +136,76 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
 
           {/* User Info */}
           <div className="space-y-4">
-            <h3 className="font-medium flex items-center gap-2">
-              <User className="w-4 h-4" />
-              {t("git.userName")} & {t("git.userEmail")}
-            </h3>
-            <div className="space-y-3">
-              <div>
-                <label className="block text-sm mb-1">{t("git.userName")}</label>
+            <div className="flex items-center justify-between">
+              <h3 className="font-medium flex items-center gap-2">
+                <User className="w-4 h-4" />
+                {t("git.userName")} & {t("git.userEmail")}
+              </h3>
+              <label className="flex items-center gap-2 cursor-pointer">
                 <input
-                  type="text"
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  placeholder="Your Name"
-                  className="w-full px-3 py-2 bg-secondary border border-border rounded-lg"
+                  type="checkbox"
+                  checked={useCustomUserInfo}
+                  onChange={(e) => setUseCustomUserInfo(e.target.checked)}
+                  className="w-4 h-4 rounded"
                 />
-              </div>
-              <div>
-                <label className="block text-sm mb-1">{t("git.userEmail")}</label>
-                <input
-                  type="email"
-                  value={userEmail}
-                  onChange={(e) => setUserEmail(e.target.value)}
-                  placeholder="your.email@example.com"
-                  className="w-full px-3 py-2 bg-secondary border border-border rounded-lg"
-                />
-              </div>
+                <span className="text-sm">{t("git.useCustomUserInfo")}</span>
+              </label>
             </div>
+            {!useCustomUserInfo ? (
+              <div className="bg-secondary/50 rounded-lg p-3 border border-border">
+                <p className="text-sm font-medium mb-2">
+                  ✓ {t("git.usingSystemGitConfig")}
+                </p>
+                {systemGitConfig.user_name || systemGitConfig.user_email ? (
+                  <div className="space-y-1">
+                    {systemGitConfig.user_name && (
+                      <p className="text-sm text-foreground">
+                        <span className="text-muted-foreground">Name:</span> {systemGitConfig.user_name}
+                      </p>
+                    )}
+                    {systemGitConfig.user_email && (
+                      <p className="text-sm text-foreground">
+                        <span className="text-muted-foreground">Email:</span> {systemGitConfig.user_email}
+                      </p>
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-xs text-yellow-500">
+                    ⚠️ System git config not found. Please run:
+                    <br />
+                    git config --global user.name "Your Name"
+                    <br />
+                    git config --global user.email "your@email.com"
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  Override system git config for this workspace
+                </p>
+                <div>
+                  <label className="block text-sm mb-1">{t("git.userName")}</label>
+                  <input
+                    type="text"
+                    value={userName}
+                    onChange={(e) => setUserName(e.target.value)}
+                    placeholder="Your Name"
+                    className="w-full px-3 py-2 bg-secondary border border-border rounded-lg"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm mb-1">{t("git.userEmail")}</label>
+                  <input
+                    type="email"
+                    value={userEmail}
+                    onChange={(e) => setUserEmail(e.target.value)}
+                    placeholder="your.email@example.com"
+                    className="w-full px-3 py-2 bg-secondary border border-border rounded-lg"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Authentication Method */}
@@ -152,6 +214,9 @@ export default function GitConfigDialog({ onClose }: GitConfigDialogProps) {
               <Key className="w-4 h-4" />
               {t("git.authMethod")}
             </h3>
+            <p className="text-sm text-muted-foreground">
+              Used for authenticating with remote repository (push/pull)
+            </p>
             <div className="space-y-2">
               <label className="flex items-center gap-3 p-3 border border-border rounded-lg cursor-pointer hover:bg-accent">
                 <input
