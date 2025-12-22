@@ -98,6 +98,29 @@ pub fn save_arena_settings(
         .map_err(|e| format!("Failed to save settings: {}", e))
 }
 
+/// Save a generic app setting
+#[tauri::command]
+pub fn save_app_setting(
+    key: String,
+    value: String,
+    state: State<AppSettingsState>,
+) -> Result<(), String> {
+    let db = state.app_db.lock().map_err(|e| e.to_string())?;
+    db.save_app_setting(&key, &value)
+        .map_err(|e| format!("Failed to save setting: {}", e))
+}
+
+/// Get a generic app setting
+#[tauri::command]
+pub fn get_app_setting(
+    key: String,
+    state: State<AppSettingsState>,
+) -> Result<String, String> {
+    let db = state.app_db.lock().map_err(|e| e.to_string())?;
+    db.get_app_setting(&key)
+        .map_err(|e| format!("Setting not found: {}", e))
+}
+
 
 
 
