@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { Sparkles, Palette, Languages, Clock, Check } from "lucide-react";
+import { Sparkles, Palette, Languages, Clock } from "lucide-react";
 import { invoke } from "@tauri-apps/api/tauri";
 
 interface EnabledModel {
@@ -13,7 +13,11 @@ interface EnabledModel {
 
 type SaveStatus = "idle" | "saving" | "saved";
 
-export default function GitSettingsPanel() {
+interface GitSettingsPanelProps {
+  onSaveStatusChange?: (status: "saving" | "saved") => void;
+}
+
+export default function GitSettingsPanel({ onSaveStatusChange }: GitSettingsPanelProps) {
   const { t } = useTranslation();
   
   const [commitMessageModel, setCommitMessageModel] = useState("");
@@ -22,7 +26,6 @@ export default function GitSettingsPanel() {
   const [operationTimeout, setOperationTimeout] = useState("30");
   const [models, setModels] = useState<EnabledModel[]>([]);
   const [loading, setLoading] = useState(true);
-  const [saveStatus, setSaveStatus] = useState<SaveStatus>("idle");
 
   useEffect(() => {
     loadSettings();
@@ -57,12 +60,9 @@ export default function GitSettingsPanel() {
   };
 
   const showSaveStatus = () => {
-    setSaveStatus("saving");
+    onSaveStatusChange?.("saving");
     setTimeout(() => {
-      setSaveStatus("saved");
-      setTimeout(() => {
-        setSaveStatus("idle");
-      }, 2000);
+      onSaveStatusChange?.("saved");
     }, 300);
   };
 
@@ -122,22 +122,6 @@ export default function GitSettingsPanel() {
 
   return (
     <div className="flex-1 overflow-auto p-8 max-w-3xl mx-auto w-full space-y-8 relative">
-      {/* Auto-save status indicator */}
-      {saveStatus !== "idle" && (
-        <div className="fixed top-4 right-4 z-50">
-          <div className={`flex items-center gap-2 px-4 py-2 rounded-lg shadow-lg transition-all duration-300 ${
-            saveStatus === "saved" 
-              ? "bg-green-500/20 border border-green-500/30 text-green-600 dark:text-green-400" 
-              : "bg-blue-500/20 border border-blue-500/30 text-blue-600 dark:text-blue-400"
-          }`}>
-            <Check className="w-4 h-4" />
-            <span className="text-sm font-medium">
-              {saveStatus === "saving" ? t("settings.saving") : t("settings.autoSaved")}
-            </span>
-          </div>
-        </div>
-      )}
-
       <div>
         <h3 className="text-lg font-semibold mb-6">{t("git.commitMessageSettings")}</h3>
 
