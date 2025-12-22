@@ -58,6 +58,7 @@ pub struct GitCommit {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct GitRemoteStatus {
     pub remote_name: String,
     pub remote_url: String,
@@ -83,6 +84,7 @@ pub struct PushResult {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[allow(dead_code)]
 pub struct GitDiff {
     pub file_path: String,
     pub old_content: String,
