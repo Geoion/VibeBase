@@ -185,6 +185,10 @@ impl ProjectDatabase {
         })
     }
 
+    pub fn get_connection(&self) -> &Connection {
+        &self.conn
+    }
+
     pub fn register_prompt_file(&self, metadata: &PromptFileMetadata) -> Result<()> {
         let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
         
