@@ -2,6 +2,7 @@ import { useTranslation } from "react-i18next";
 import { useWorkspaceStore, Workspace, FileNode } from "../../stores/workspaceStore";
 import { useEditorStore } from "../../stores/editorStore";
 import { useGitStore } from "../../stores/gitStore";
+import { useConsoleStore } from "../../stores/consoleStore";
 import { invoke } from "@tauri-apps/api/tauri";
 import { RefreshCw, FilePlus, FolderPlus, GitBranch } from "lucide-react";
 import { useState } from "react";
@@ -20,6 +21,7 @@ export default function Navigator() {
   const { workspace, setWorkspace } = useWorkspaceStore();
   const { currentFile, setCurrentFile, setContent, setDirty } = useEditorStore();
   const { setWorkspacePath } = useGitStore();
+  const { addLog } = useConsoleStore();
   const [showNewPromptDialog, setShowNewPromptDialog] = useState(false);
   const [showNewFolderDialog, setShowNewFolderDialog] = useState(false);
   const [showGitConfigDialog, setShowGitConfigDialog] = useState(false);
@@ -282,6 +284,8 @@ export default function Navigator() {
         newName: newName,
       });
 
+      addLog("UPDATE", `Renamed: ${renameTarget.path} -> ${newPath}`);
+
       // If renamed file is currently open, update file path in editor
       if (currentFile === renameTarget.path) {
         setCurrentFile(newPath);
@@ -291,6 +295,7 @@ export default function Navigator() {
       await handleRefresh();
       setRenameTarget(null);
     } catch (error) {
+      addLog("ERROR", `Rename failed: ${renameTarget.path} - ${error}`);
       alert(`${t("rename.failed")}: ${error}`);
     }
   };
@@ -312,6 +317,9 @@ export default function Navigator() {
         workspacePath: workspace?.path,
       });
 
+      const type = deleteTarget.type === "folder" ? "folder" : "file";
+      addLog("DELETE", `Deleted ${type}: ${deleteTarget.path}`);
+
       // If deleted file is currently open, clear editor
       if (currentFile === deleteTarget.path) {
         setCurrentFile(null);
@@ -329,7 +337,7 @@ export default function Navigator() {
       await handleRefresh();
       setDeleteTarget(null);
     } catch (error) {
-      console.error("Failed to delete:", error);
+      addLog("ERROR", `Delete failed: ${deleteTarget.path} - ${error}`);
       alert(`Delete failed: ${error}`);
       setDeleteTarget(null);
     }
