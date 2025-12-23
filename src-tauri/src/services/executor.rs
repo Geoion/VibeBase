@@ -100,6 +100,7 @@ fn calculate_cost(model: &str, provider: &Provider, input_tokens: u32, output_to
         Provider::AiHubMix => (0.0, 0.0),       // Depends on model
         Provider::Google => (0.0, 0.0),         // Google pricing varies
         Provider::GitHub => (0.0, 0.0),         // GitHub pricing
+        Provider::Custom => (0.0, 0.0),         // Custom provider, pricing unknown
         _ => (0.0, 0.0),
     };
 
