@@ -251,11 +251,7 @@ pub fn get_system_theme() -> Result<String, String> {
     
     #[cfg(not(target_os = "macos"))]
     {
-        // On Windows and Linux, we rely on the JavaScript matchMedia API
-        // which is more reliable and doesn't require platform-specific code.
-        // This function will return an error, and the frontend will fall back
-        // to window.matchMedia("(prefers-color-scheme: dark)").matches
-        println!("ℹ️ [Rust] Non-macOS platform: deferring to JavaScript matchMedia");
-        Err("Theme detection not available on this platform - use JavaScript fallback".to_string())
+        // On other platforms, default to light
+        Ok("light".to_string())
     }
 }
