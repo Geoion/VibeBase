@@ -34,9 +34,10 @@ const BUILTIN_PROVIDERS = [
   { id: "openrouter", name: "OpenRouter", description: "Access hundreds of AI models through OpenRouter unified API" },
   { id: "openai", name: "OpenAI", description: "Official OpenAI API for GPT models" },
   { id: "anthropic", name: "Anthropic", description: "Claude models from Anthropic" },
-  { id: "google", name: "Google Gemini", description: "Google's Gemini AI models" },
-  { id: "aihubmix", name: "AiHubMix", description: "AI Hub Mix unified API" },
   { id: "deepseek", name: "DeepSeek", description: "DeepSeek AI models" },
+  { id: "ollama", name: "Ollama", description: "Run LLMs locally with Ollama" },
+  { id: "aihubmix", name: "AiHubMix", description: "AI Hub Mix unified API" },
+  { id: "google", name: "Google Gemini", description: "Google's Gemini AI models" },
   { id: "azure", name: "Azure OpenAI", description: "Microsoft Azure OpenAI Service" },
   { id: "github", name: "GitHub Copilot", description: "GitHub Copilot models" },
 ];
@@ -58,6 +59,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
   // Selected provider details
   const [apiKey, setApiKey] = useState("");
   const [showApiKey, setShowApiKey] = useState(false);
+  const [baseUrl, setBaseUrl] = useState("");
   const [providerEnabled, setProviderEnabled] = useState(false);
   const [models, setModels] = useState<ProviderModel[]>([]);
   const [_savedEnabledModels, setSavedEnabledModels] = useState<string[]>([]);
@@ -148,15 +150,8 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     try {
       console.log("[loadProviderDetailsWithData] Loading provider:", providerName);
 
-      // Check if this is a builtin provider or custom provider
-      const isBuiltin = BUILTIN_PROVIDERS.some(p => p.id === providerName);
-
       // Try to find existing config from the provided list
-      // For builtin: match by name pattern (e.g., "openai_default")
-      // For custom: match by exact name
-      const existingConfig = isBuiltin
-        ? providersList.find(p => p.name === `${providerName}_default`)
-        : providersList.find(p => p.name === providerName);
+      const existingConfig = providersList.find(p => p.name === providerName);
 
       if (existingConfig) {
         // Load the full provider details to get the actual API key
@@ -168,6 +163,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
           console.log("[loadProviderDetailsWithData] fullProvider:", fullProvider);
 
           setApiKey(fullProvider.api_key || "");
+          setBaseUrl(fullProvider.base_url || "");
           setProviderEnabled(fullProvider.enabled);
 
           // Parse and load enabled models
@@ -208,6 +204,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
         } catch (error) {
           console.error("Error loading provider details:", error);
           setApiKey("");
+          setBaseUrl("");
           setProviderEnabled(false);
           setSavedEnabledModels([]);
           setModels([]);
@@ -216,6 +213,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
         console.log("[loadProviderDetailsWithData] No existing config for provider:", providerName);
         // No config yet for this provider - default to disabled
         setApiKey("");
+        setBaseUrl("");
         setProviderEnabled(false);
         setSavedEnabledModels([]);
         setModels([]);
@@ -236,7 +234,8 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     console.log("[handleOpenModelDialog] selectedProvider:", selectedProvider);
     console.log("[handleOpenModelDialog] apiKey length:", apiKey?.length);
 
-    if (!selectedProvider || !apiKey) {
+    // Ollama doesn't require API key
+    if (!selectedProvider || (!apiKey && selectedProvider !== "ollama")) {
       alert("Please enter an API Key first");
       return;
     }
@@ -254,15 +253,17 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
       // For custom Provider, use custom type for fetching
       const providerType = selectedBuiltin ? selectedBuiltin.id : "custom";
-      const baseUrl = selectedCustom ? selectedProviderConfig?.base_url : undefined;
+      const fetchBaseUrl = selectedCustom ? selectedProviderConfig?.base_url :
+        selectedProvider === "ollama" ? (baseUrl || undefined) :
+          undefined;
 
       console.log("[handleOpenModelDialog] Final params:", {
         provider: providerType,
         apiKeyLength: apiKey.length,
-        baseUrl: baseUrl,
+        baseUrl: fetchBaseUrl,
       });
 
-      if (!baseUrl && selectedCustom) {
+      if (!fetchBaseUrl && selectedCustom) {
         console.error("[handleOpenModelDialog] Custom provider but no base_url!");
         alert("Custom provider missing base URL");
         setFetchingModels(false);
@@ -271,8 +272,8 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
       const modelsList = await invoke<Array<{ id: string, name: string, description?: string }>>("fetch_provider_models", {
         provider: providerType,
-        apiKey: apiKey,
-        baseUrl: baseUrl,
+        apiKey: apiKey || "",
+        baseUrl: fetchBaseUrl,
       });
 
       console.log("[handleOpenModelDialog] Fetched models:", modelsList);
@@ -349,11 +350,8 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
       if (!selectedBuiltin && !selectedCustom) return;
 
       // Check if provider already exists
-      // For builtin: match by name pattern (e.g., "openai_default")
-      // For custom: match by exact name
-      const existingProvider = selectedBuiltin
-        ? providers.find(p => p.name === `${selectedBuiltin.id}_default`)
-        : providers.find(p => p.name === selectedProvider);
+      // Both builtin and custom: match by exact name
+      const existingProvider = providers.find(p => p.name === selectedProvider);
 
       // Get list of enabled model IDs
       const enabledModelIds = models.filter(m => m.enabled).map(m => m.id);
@@ -361,10 +359,10 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
       console.log("[handleSaveInternal] Saving models:", enabledModelIds);
 
       const input = {
-        name: existingProvider?.name || (selectedBuiltin ? `${selectedBuiltin.id}_default` : selectedProvider),
+        name: existingProvider?.name || (selectedBuiltin ? selectedBuiltin.id : selectedProvider),
         provider: selectedBuiltin ? selectedBuiltin.id : "custom",  // Custom providers use custom type
         model: models.find(m => m.enabled)?.name || "",
-        base_url: selectedCustom ? selectedProviderConfig?.base_url : undefined,
+        base_url: (selectedCustom || selectedProvider === "ollama") ? (baseUrl || undefined) : undefined,
         api_key: apiKey || undefined,
         api_key_source: "direct",
         api_key_value: undefined,
@@ -402,7 +400,8 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
   };
 
   const handleTestConnection = async () => {
-    if (!selectedProvider || !apiKey) {
+    // Ollama doesn't require API key
+    if (!selectedProvider || (!apiKey && selectedProvider !== "ollama")) {
       setTestResult({
         success: false,
         message: t("providers.testNoApiKey", "请先输入 API Key")
@@ -423,18 +422,20 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
       // For custom Provider, use custom type for testing
       const providerType = selectedBuiltin ? selectedBuiltin.id : "custom";
-      const baseUrl = selectedCustom ? selectedProviderConfig?.base_url : undefined;
+      const testBaseUrl = selectedCustom ? selectedProviderConfig?.base_url :
+        selectedProvider === "ollama" ? (baseUrl || undefined) :
+          undefined;
 
       console.log("[handleTestConnection] Testing with:", {
         provider: providerType,
         apiKeyLength: apiKey.length,
-        baseUrl: baseUrl,
+        baseUrl: testBaseUrl,
       });
 
       const result = await invoke<string>("test_provider_connection", {
         provider: providerType,
-        apiKey: apiKey,
-        baseUrl: baseUrl,
+        apiKey: apiKey || "",
+        baseUrl: testBaseUrl,
       });
 
       setTestResult({
@@ -609,13 +610,8 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     (p) => p.id === selectedProvider
   );
 
-  // Find the actual provider configuration
-  // For builtin providers: match by name pattern (e.g., "openai_default")
-  // For custom providers: match by exact name
-  const isBuiltinSelected = BUILTIN_PROVIDERS.some(p => p.id === selectedProvider);
-  const selectedProviderConfig = isBuiltinSelected
-    ? providers.find(p => p.name === `${selectedProvider}_default`)
-    : providers.find(p => p.name === selectedProvider);
+  // Find the actual provider configuration by name
+  const selectedProviderConfig = providers.find(p => p.name === selectedProvider);
 
   const isProviderConfigured = selectedProviderConfig?.api_key_status === "configured";
 
@@ -696,7 +692,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                 ) : (
                   filteredBuiltinProviders.map((provider) => {
                     const isConfigured = providers.some(
-                      p => p.name === `${provider.id}_default` && p.api_key_status === "configured"
+                      p => p.name === provider.id && p.api_key_status === "configured"
                     );
 
                     return (
@@ -798,47 +794,79 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
               {/* Provider Details Content */}
               <div className="flex-1 overflow-auto p-6 space-y-6">
-                {/* API Key Section */}
-                <div>
-                  <label className="block text-sm font-medium text-foreground mb-2">
-                    {t("providers.apiKey")}
-                  </label>
-                  <div className="relative">
-                    <input
-                      type={showApiKey ? "text" : "password"}
-                      value={apiKey}
-                      onChange={(e) => {
-                        setApiKey(e.target.value);
-                        setSaved(false);
-                      }}
-                      placeholder={t("providers.apiKeyPlaceholder")}
-                      className="w-full px-3 py-2 pr-10 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
-                    />
-                    <button
-                      onClick={() => setShowApiKey(!showApiKey)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showApiKey ? (
-                        <EyeOff className="w-4 h-4" />
-                      ) : (
-                        <Eye className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                  {!isCustomProvider && selectedBuiltinProvider && (
-                    <p className="mt-1.5 text-xs text-muted-foreground">
-                      Get your API key from{" "}
-                      <a
-                        href={`https://${selectedBuiltinProvider?.id === "openrouter" ? "openrouter.ai" : (selectedBuiltinProvider?.id || "example") + ".com"}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-primary hover:underline"
+                {/* API Key Section - Hide for Ollama */}
+                {selectedProvider !== "ollama" && (
+                  <div>
+                    <label className="block text-sm font-medium text-foreground mb-2">
+                      {t("providers.apiKey")}
+                    </label>
+                    <div className="relative">
+                      <input
+                        type={showApiKey ? "text" : "password"}
+                        value={apiKey}
+                        onChange={(e) => {
+                          setApiKey(e.target.value);
+                          setSaved(false);
+                        }}
+                        placeholder={t("providers.apiKeyPlaceholder")}
+                        className="w-full px-3 py-2 pr-10 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <button
+                        onClick={() => setShowApiKey(!showApiKey)}
+                        className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
                       >
-                        {selectedBuiltinProvider?.name} Keys →
-                      </a>
-                    </p>
-                  )}
-                </div>
+                        {showApiKey ? (
+                          <EyeOff className="w-4 h-4" />
+                        ) : (
+                          <Eye className="w-4 h-4" />
+                        )}
+                      </button>
+                    </div>
+                    {!isCustomProvider && selectedBuiltinProvider && (
+                      <p className="mt-1.5 text-xs text-muted-foreground">
+                        Get your API key from{" "}
+                        <a
+                          href={`https://${selectedBuiltinProvider?.id === "openrouter" ? "openrouter.ai" : (selectedBuiltinProvider?.id || "example") + ".com"}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-primary hover:underline"
+                        >
+                          {selectedBuiltinProvider?.name} Keys →
+                        </a>
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Ollama Configuration */}
+                {selectedProvider === "ollama" && (
+                  <div className="space-y-3">
+                    <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
+                      <p className="text-sm text-foreground">
+                        {t("providers.ollamaInfo", "Ollama 是本地 LLM 服务，不需要 API Key。请确保 Ollama 正在运行。")}
+                      </p>
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium text-foreground mb-2">
+                        {t("providers.baseUrl", "Base URL")}
+                      </label>
+                      <input
+                        type="text"
+                        value={baseUrl || "http://localhost:11434"}
+                        onChange={(e) => {
+                          setBaseUrl(e.target.value);
+                          setSaved(false);
+                        }}
+                        placeholder="http://localhost:11434"
+                        className="w-full px-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
+                      />
+                      <p className="mt-1.5 text-xs text-muted-foreground">
+                        {t("providers.ollamaBaseUrlDesc", "Ollama 服务地址，支持局域网地址（如 http://192.168.1.100:11434）")}
+                      </p>
+                    </div>
+                  </div>
+                )}
 
                 {/* Models Section */}
                 <div>
