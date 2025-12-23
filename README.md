@@ -211,7 +211,7 @@ VibeBase/
 |----------|--------|----------|-------|
 | **OpenAI** | ✅ | `api.openai.com/v1` | Full support |
 | **Anthropic** | ✅ | `api.anthropic.com` | Claude models |
-| **DeepSeek** | ✅ | `api.deepseek.com/v1` | Chinese LLM |
+| **DeepSeek** | ✅ | `api.deepseek.com` | Chinese LLM |
 | **OpenRouter** | ✅ | `openrouter.ai/api/v1` | Multi-provider gateway |
 | **Ollama** | ✅ | `localhost:11434/v1` | Local models |
 | **AiHubMix** | ✅ | `aihubmix.com/v1` | OpenAI-compatible |

@@ -5,6 +5,33 @@ All notable changes to VibeBase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.1.11] - 2025-12-23
+
+### Added
+- **Custom Provider Type**: Added dedicated "custom" provider type to properly distinguish custom providers from built-in OpenAI provider, eliminating configuration conflicts
+- **Custom Provider Editing**: Added ability to edit custom provider configurations after creation, including name, base URL, and description. Name changes are handled by deleting the old configuration and creating a new one.
+- **Custom Provider Validation**: Added validation to prevent custom provider names from conflicting with built-in provider IDs and names (case-insensitive)
+- **Ollama Provider**: Added Ollama to built-in provider list with special handling:
+  - No API Key required (hidden in UI)
+  - Configurable Base URL for local or LAN access (default: http://localhost:11434)
+  - Supports remote Ollama instances on local network
+- **Debug Logging**: Added comprehensive debug logging for custom provider operations (add, update, fetch models, test connection) to help diagnose configuration issues
+- **Database Migration System**: Added automatic migration for v0.1.11 to:
+  - Simplify built-in provider names by removing `_default` suffix (e.g., `openai_default` → `openai`)
+  - Migrate existing custom providers from 'openai' type to 'custom' type and clear their model lists
+
+### Changed
+- **Model Display Consistency**: Unified model list display across Arena and Execution panels to show provider name instead of provider type for better clarity (e.g., "Deepseek2" instead of "custom", "deepseek" instead of "deepseek")
+- **Provider Naming Convention**: Simplified built-in provider names to use clean IDs (e.g., "openai", "deepseek") instead of "{id}_default" format, with validation preventing custom providers from using these reserved names
+
+### Fixed
+- **DeepSeek API Base URL**: Corrected DeepSeek base URL from `https://api.deepseek.com/v1` to `https://api.deepseek.com` according to official documentation
+- **Provider Log Labels**: Fixed log messages to correctly display provider names (DeepSeek, OpenRouter, Ollama, AiHubMix) instead of always showing "OpenAI Provider" for OpenAI-compatible APIs
+- **Arena Mode Provider Configuration**: Fixed critical bug where Arena mode only set provider correctly for OpenRouter, causing DeepSeek and other providers to use wrong API endpoints and keys. Now all providers are correctly configured in Arena mode.
+- **Custom Provider Display and Management**: Fixed custom providers not appearing in the provider list. Custom providers are now correctly identified by their unique name and custom base URL, and can be properly configured, saved, and used for execution.
+- **Provider Configuration Isolation**: Fixed critical bug where built-in and custom providers with the same provider type (e.g., OpenAI) would share configurations and models. Now each provider configuration is properly isolated by unique name (built-in use `{id}_default` pattern, custom use user-defined names).
+- **Custom Provider Model Fetching**: Fixed model fetching for custom providers with OpenAI-compatible APIs. The GPT model filter is now only applied to official OpenAI API, allowing custom providers to return all their models (e.g., deepseek-chat, deepseek-reasoner).
+
 ## [0.1.10] - 2025-12-23
 
 ### Added
