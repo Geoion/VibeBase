@@ -22,7 +22,12 @@ impl AppDatabase {
         // Initialize schema
         conn.execute_batch(include_str!("../sql/app_schema.sql"))?;
 
-        Ok(Self { conn })
+        let db = Self { conn };
+        
+        // Run migrations
+        db.migrate_v0_1_11()?;
+
+        Ok(db)
     }
 
     fn get_db_path() -> PathBuf {
@@ -121,6 +126,100 @@ impl AppDatabase {
 
     pub fn delete_llm_provider(&self, name: &str) -> Result<()> {
         self.conn.execute("DELETE FROM llm_providers WHERE name = ?1", params![name])?;
+        Ok(())
+    }
+
+    /// Migrate data for v0.1.11
+    /// Fixes provider naming convention for built-in providers
+    fn migrate_v0_1_11(&self) -> Result<()> {
+        // Check if migration already applied
+        let migration_applied: bool = self.conn
+            .query_row(
+                "SELECT COUNT(*) FROM schema_version WHERE version = '1.1.0'",
+                [],
+                |row| row.get::<_, i32>(0).map(|count| count > 0),
+            )
+            .unwrap_or(false);
+
+        if migration_applied {
+            return Ok(());
+        }
+
+        println!("🔄 [Migration] Running v0.1.11 migration...");
+
+        // List of built-in provider IDs
+        let builtin_ids = vec!["openai", "anthropic", "deepseek", "openrouter", "ollama", "aihubmix", "google", "azure", "github"];
+
+        // Migrate built-in providers: remove _default suffix if exists
+        for provider_id in builtin_ids {
+            let old_name_with_suffix = format!("{}_default", provider_id);
+            
+            // Check if there's a provider with {id}_default format (needs migration)
+            let has_old_format = self.conn
+                .query_row(
+                    "SELECT COUNT(*) FROM llm_providers WHERE name = ?1",
+                    params![old_name_with_suffix],
+                    |row| row.get::<_, i32>(0),
+                )
+                .unwrap_or(0) > 0;
+
+            if has_old_format {
+                // Check if simple name already exists
+                let simple_name_exists = self.conn
+                    .query_row(
+                        "SELECT COUNT(*) FROM llm_providers WHERE name = ?1",
+                        params![provider_id],
+                        |row| row.get::<_, i32>(0),
+                    )
+                    .unwrap_or(0) > 0;
+
+                if !simple_name_exists {
+                    // Rename from {id}_default to {id}
+                    println!("🔄 [Migration] Simplifying {} -> {}", old_name_with_suffix, provider_id);
+                    self.conn.execute(
+                        "UPDATE llm_providers SET name = ?1 WHERE name = ?2",
+                        params![provider_id, old_name_with_suffix],
+                    )?;
+                    println!("✅ [Migration] Renamed to {}", provider_id);
+                } else {
+                    println!("⚠️ [Migration] {} already exists, keeping {}", provider_id, old_name_with_suffix);
+                }
+            }
+        }
+
+        // Migrate custom providers from 'openai' type to 'custom' type
+        println!("🔄 [Migration] Migrating custom providers to 'custom' type...");
+        
+        // Find all custom providers (provider='openai' with custom base_url)
+        let custom_provider_names: Vec<String> = {
+            let mut stmt = self.conn.prepare(
+                "SELECT name FROM llm_providers 
+                 WHERE provider = 'openai' AND base_url IS NOT NULL AND base_url != '' 
+                 AND base_url NOT LIKE '%api.openai.com%' AND name != 'openai_default'"
+            )?;
+            
+            let rows = stmt.query_map([], |row| row.get::<_, String>(0))?;
+            rows.collect::<Result<Vec<_>>>()?
+        };
+
+        for name in custom_provider_names {
+            println!("🔄 [Migration] Migrating custom provider '{}' to 'custom' type", name);
+            self.conn.execute(
+                "UPDATE llm_providers SET provider = 'custom', enabled_models = '[]' WHERE name = ?1",
+                params![name],
+            )?;
+            println!("✅ [Migration] Migrated '{}' and cleared its model list", name);
+        }
+
+        // Mark migration as applied
+        let now = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs() as i64;
+        self.conn.execute(
+            "INSERT OR IGNORE INTO schema_version (version, applied_at) VALUES (?1, ?2)",
+            params!["1.1.0", now],
+        )?;
+
+        println!("✅ [Migration] v0.1.11 migration completed");
+
         Ok(())
     }
 
