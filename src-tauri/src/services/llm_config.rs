@@ -145,6 +145,7 @@ impl LLMConfigResolver {
             "google" => Ok(Provider::Google),
             "aihubmix" => Ok(Provider::AiHubMix),
             "github" => Ok(Provider::GitHub),
+            "custom" => Ok(Provider::Custom),
             _ => Err(format!("Unknown provider: {}", provider_str)),
         }
     }
@@ -243,4 +244,5 @@ mod tests {
         assert!(resolver.parse_provider("invalid").is_err());
     }
 }
+
 
