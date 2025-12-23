@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { invoke } from "@tauri-apps/api/tauri";
 import { useTranslation } from "react-i18next";
-import { Search, Eye, EyeOff, Zap, Trash2, CheckCircle, XCircle, Loader2, Plus } from "lucide-react";
+import { Search, Eye, EyeOff, Zap, Trash2, CheckCircle, XCircle, Loader2, Plus, Edit2 } from "lucide-react";
 import CustomProviderDialog, { CustomProviderData } from "../dialogs/CustomProviderDialog";
 
 interface LLMProvider {
@@ -76,6 +76,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
   // Custom provider dialog
   const [showCustomProviderDialog, setShowCustomProviderDialog] = useState(false);
+  const [editingCustomProvider, setEditingCustomProvider] = useState<CustomProviderData | null>(null);
   const [customProviders, setCustomProviders] = useState<Array<{ id: string; name: string; description: string }>>([]);
 
   useEffect(() => {
@@ -106,12 +107,11 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
       const data = await invoke<LLMProvider[]>("list_llm_providers");
       setProviders(data);
 
-      // Extract custom Providers (not in builtin list)
-      const builtinIds = BUILTIN_PROVIDERS.map(p => p.id);
+      // Extract custom Providers (provider type is 'custom')
       const custom = data
-        .filter(p => !builtinIds.includes(p.provider) && !p.is_default)
+        .filter(p => p.provider === 'custom')
         .map(p => ({
-          id: p.provider,
+          id: p.name,  // Use name as unique ID for custom providers
           name: p.name,
           description: `Custom Provider - ${p.base_url || 'OpenAI Compatible API'}`,
         }));
@@ -148,8 +148,15 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     try {
       console.log("[loadProviderDetailsWithData] Loading provider:", providerName);
 
+      // Check if this is a builtin provider or custom provider
+      const isBuiltin = BUILTIN_PROVIDERS.some(p => p.id === providerName);
+
       // Try to find existing config from the provided list
-      const existingConfig = providersList.find(p => p.provider === providerName || p.name === providerName);
+      // For builtin: match by name pattern (e.g., "openai_default")
+      // For custom: match by exact name
+      const existingConfig = isBuiltin
+        ? providersList.find(p => p.name === `${providerName}_default`)
+        : providersList.find(p => p.name === providerName);
 
       if (existingConfig) {
         // Load the full provider details to get the actual API key
@@ -225,6 +232,10 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
 
   const handleOpenModelDialog = async () => {
+    console.log("[handleOpenModelDialog] Called!");
+    console.log("[handleOpenModelDialog] selectedProvider:", selectedProvider);
+    console.log("[handleOpenModelDialog] apiKey length:", apiKey?.length);
+
     if (!selectedProvider || !apiKey) {
       alert("Please enter an API Key first");
       return;
@@ -233,17 +244,38 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     setFetchingModels(true);
     try {
       const selectedBuiltin = BUILTIN_PROVIDERS.find(p => p.id === selectedProvider);
-      const selectedCustom = customProviders.find(p => p.id === selectedProvider);
+      const selectedCustom = customProviders.find(p => p.name === selectedProvider);
 
-      // For custom Provider, use openai type for fetching
-      const providerType = selectedBuiltin ? selectedBuiltin.id : "openai";
+      console.log("[handleOpenModelDialog] selectedBuiltin:", selectedBuiltin);
+      console.log("[handleOpenModelDialog] selectedCustom:", selectedCustom);
+      console.log("[handleOpenModelDialog] selectedProviderConfig:", selectedProviderConfig);
+      console.log("[handleOpenModelDialog] customProviders:", customProviders);
+      console.log("[handleOpenModelDialog] providers:", providers);
+
+      // For custom Provider, use custom type for fetching
+      const providerType = selectedBuiltin ? selectedBuiltin.id : "custom";
       const baseUrl = selectedCustom ? selectedProviderConfig?.base_url : undefined;
+
+      console.log("[handleOpenModelDialog] Final params:", {
+        provider: providerType,
+        apiKeyLength: apiKey.length,
+        baseUrl: baseUrl,
+      });
+
+      if (!baseUrl && selectedCustom) {
+        console.error("[handleOpenModelDialog] Custom provider but no base_url!");
+        alert("Custom provider missing base URL");
+        setFetchingModels(false);
+        return;
+      }
 
       const modelsList = await invoke<Array<{ id: string, name: string, description?: string }>>("fetch_provider_models", {
         provider: providerType,
         apiKey: apiKey,
         baseUrl: baseUrl,
       });
+
+      console.log("[handleOpenModelDialog] Fetched models:", modelsList);
 
       // Set available models
       const available = modelsList.map(m => ({
@@ -311,10 +343,17 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
     try {
       const selectedBuiltin = BUILTIN_PROVIDERS.find(p => p.id === selectedProvider);
-      if (!selectedBuiltin) return;
+      const selectedCustom = customProviders.find(p => p.name === selectedProvider);
+
+      // If neither builtin nor custom, return
+      if (!selectedBuiltin && !selectedCustom) return;
 
       // Check if provider already exists
-      const existingProvider = providers.find(p => p.provider === selectedProvider);
+      // For builtin: match by name pattern (e.g., "openai_default")
+      // For custom: match by exact name
+      const existingProvider = selectedBuiltin
+        ? providers.find(p => p.name === `${selectedBuiltin.id}_default`)
+        : providers.find(p => p.name === selectedProvider);
 
       // Get list of enabled model IDs
       const enabledModelIds = models.filter(m => m.enabled).map(m => m.id);
@@ -322,10 +361,10 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
       console.log("[handleSaveInternal] Saving models:", enabledModelIds);
 
       const input = {
-        name: existingProvider?.name || `${selectedBuiltin.id}_default`,
-        provider: selectedBuiltin.id,
+        name: existingProvider?.name || (selectedBuiltin ? `${selectedBuiltin.id}_default` : selectedProvider),
+        provider: selectedBuiltin ? selectedBuiltin.id : "custom",  // Custom providers use custom type
         model: models.find(m => m.enabled)?.name || "",
-        base_url: undefined,
+        base_url: selectedCustom ? selectedProviderConfig?.base_url : undefined,
         api_key: apiKey || undefined,
         api_key_source: "direct",
         api_key_value: undefined,
@@ -375,11 +414,22 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     setTestingConnection(true);
     try {
       const selectedBuiltin = BUILTIN_PROVIDERS.find(p => p.id === selectedProvider);
-      const selectedCustom = customProviders.find(p => p.id === selectedProvider);
+      const selectedCustom = customProviders.find(p => p.name === selectedProvider);
 
-      // For custom Provider, use openai type for testing
-      const providerType = selectedBuiltin ? selectedBuiltin.id : "openai";
+      console.log("[handleTestConnection] selectedProvider:", selectedProvider);
+      console.log("[handleTestConnection] selectedBuiltin:", selectedBuiltin);
+      console.log("[handleTestConnection] selectedCustom:", selectedCustom);
+      console.log("[handleTestConnection] selectedProviderConfig:", selectedProviderConfig);
+
+      // For custom Provider, use custom type for testing
+      const providerType = selectedBuiltin ? selectedBuiltin.id : "custom";
       const baseUrl = selectedCustom ? selectedProviderConfig?.base_url : undefined;
+
+      console.log("[handleTestConnection] Testing with:", {
+        provider: providerType,
+        apiKeyLength: apiKey.length,
+        baseUrl: baseUrl,
+      });
 
       const result = await invoke<string>("test_provider_connection", {
         provider: providerType,
@@ -434,28 +484,87 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     }
   };
 
-  const handleAddCustomProvider = async (providerData: CustomProviderData) => {
+  const handleAddOrUpdateCustomProvider = async (providerData: CustomProviderData) => {
     try {
+      const isEditing = !!editingCustomProvider;
+
+      console.log("[handleAddOrUpdateCustomProvider] isEditing:", isEditing);
+      console.log("[handleAddOrUpdateCustomProvider] providerData:", providerData);
+      console.log("[handleAddOrUpdateCustomProvider] editingCustomProvider:", editingCustomProvider);
+
       const input = {
         name: providerData.name,
-        provider: providerData.name,  // Use name as provider type
+        provider: "custom",  // Custom providers use dedicated "custom" type
         model: "",  // Default empty, user can add later
         base_url: providerData.baseUrl,
-        api_key: "",
+        api_key: apiKey || "",  // Preserve existing API key
         api_key_source: "direct",
-        enabled: true,
-        enabled_models: "[]",
+        enabled: providerEnabled,
+        enabled_models: JSON.stringify(models.filter(m => m.enabled).map(m => m.id)),
+        is_default: false,  // Mark as custom provider
       };
 
-      await invoke("save_llm_provider", { input });
+      console.log("[handleAddOrUpdateCustomProvider] input:", input);
 
-      // Reload Provider list and select newly added one
+      if (isEditing) {
+        // Update existing custom provider
+        const existingProvider = providers.find(p => p.name === editingCustomProvider.name);
+        console.log("[handleAddOrUpdateCustomProvider] existingProvider:", existingProvider);
+
+        if (existingProvider) {
+          // Check if name changed
+          const nameChanged = providerData.name !== editingCustomProvider.name;
+
+          if (nameChanged) {
+            // Name changed: delete old and create new
+            console.log("[handleAddOrUpdateCustomProvider] Name changed, deleting old and creating new");
+            await invoke("delete_llm_provider", {
+              providerName: existingProvider.name,
+            });
+            await invoke("save_llm_provider", { input });
+          } else {
+            // Name unchanged: update in place
+            console.log("[handleAddOrUpdateCustomProvider] Calling update_llm_provider with:", {
+              providerName: existingProvider.name,
+              input,
+            });
+
+            await invoke("update_llm_provider", {
+              providerName: existingProvider.name,
+              input,
+            });
+          }
+
+          console.log("[handleAddOrUpdateCustomProvider] Update successful");
+        } else {
+          console.error("[handleAddOrUpdateCustomProvider] Existing provider not found!");
+        }
+      } else {
+        // Create new custom provider
+        console.log("[handleAddOrUpdateCustomProvider] Creating new custom provider");
+        await invoke("save_llm_provider", { input });
+        console.log("[handleAddOrUpdateCustomProvider] Create successful");
+      }
+
+      // Reload Provider list and select the provider
       await loadProviders();
       setSelectedProvider(providerData.name);
+      setEditingCustomProvider(null);
     } catch (error) {
-      console.error("Failed to add custom provider:", error);
-      alert("Failed to add custom provider: " + error);
+      console.error("[handleAddOrUpdateCustomProvider] Failed to save custom provider:", error);
+      alert(`Failed to save custom provider: ${error}`);
     }
+  };
+
+  const handleEditCustomProvider = () => {
+    if (!selectedCustomProvider || !selectedProviderConfig) return;
+
+    setEditingCustomProvider({
+      name: selectedProviderConfig.name,
+      baseUrl: selectedProviderConfig.base_url || "",
+      description: "",
+    });
+    setShowCustomProviderDialog(true);
   };
 
   const handleToggleProviderEnabled = () => {
@@ -500,9 +609,13 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     (p) => p.id === selectedProvider
   );
 
-  const selectedProviderConfig = providers.find(
-    (p) => p.provider === selectedProvider
-  );
+  // Find the actual provider configuration
+  // For builtin providers: match by name pattern (e.g., "openai_default")
+  // For custom providers: match by exact name
+  const isBuiltinSelected = BUILTIN_PROVIDERS.some(p => p.id === selectedProvider);
+  const selectedProviderConfig = isBuiltinSelected
+    ? providers.find(p => p.name === `${selectedProvider}_default`)
+    : providers.find(p => p.name === selectedProvider);
 
   const isProviderConfigured = selectedProviderConfig?.api_key_status === "configured";
 
@@ -545,12 +658,13 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
               <>
                 {/* Custom Providers */}
                 {filteredCustomProviders.map((provider) => {
-                  const isConfigured = providers.find(p => p.provider === provider.id)?.api_key_status === "configured";
+                  const providerConfig = providers.find(p => p.name === provider.name);
+                  const isConfigured = providerConfig?.api_key_status === "configured";
                   return (
                     <button
                       key={`custom-${provider.id}`}
-                      onClick={() => handleProviderSelect(provider.id)}
-                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors ${selectedProvider === provider.id
+                      onClick={() => handleProviderSelect(provider.name)}
+                      className={`w-full flex items-center gap-3 px-3 py-3 rounded-lg text-left transition-colors ${selectedProvider === provider.name
                         ? "bg-primary/10 border border-primary"
                         : "hover:bg-accent border border-transparent"
                         }`}
@@ -582,7 +696,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                 ) : (
                   filteredBuiltinProviders.map((provider) => {
                     const isConfigured = providers.some(
-                      p => p.provider === provider.id && p.api_key_status === "configured"
+                      p => p.name === `${provider.id}_default` && p.api_key_status === "configured"
                     );
 
                     return (
@@ -638,6 +752,15 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                       <span className="px-3 py-1 text-xs font-medium bg-muted text-muted-foreground rounded-full">
                         {t("providers.inactive")}
                       </span>
+                    )}
+                    {isCustomProvider && (
+                      <button
+                        onClick={handleEditCustomProvider}
+                        className="p-2 hover:bg-accent rounded-md transition-colors"
+                        title={t("providers.editCustomProvider", "编辑自定义提供商")}
+                      >
+                        <Edit2 className="w-4 h-4 text-muted-foreground" />
+                      </button>
                     )}
                     <button
                       onClick={handleTestConnection}
@@ -983,9 +1106,15 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
       {/* Custom Provider Dialog */}
       <CustomProviderDialog
         isOpen={showCustomProviderDialog}
-        onClose={() => setShowCustomProviderDialog(false)}
-        onConfirm={handleAddCustomProvider}
+        onClose={() => {
+          setShowCustomProviderDialog(false);
+          setEditingCustomProvider(null);
+        }}
+        onConfirm={handleAddOrUpdateCustomProvider}
         existingProviders={providers.map(p => p.name)}
+        builtinProviderIds={BUILTIN_PROVIDERS.map(p => p.id)}
+        builtinProviderNames={BUILTIN_PROVIDERS.map(p => p.name)}
+        editingProvider={editingCustomProvider}
       />
     </div >
   );
