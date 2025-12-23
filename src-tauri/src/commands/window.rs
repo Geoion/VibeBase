@@ -3,7 +3,7 @@
 use tauri::{Manager, Window, WindowBuilder, WindowUrl};
 
 #[tauri::command]
-pub fn open_variables_window(window: Window) -> Result<(), String> {
+pub async fn open_variables_window(window: Window) -> Result<(), String> {
     let app_handle = window.app_handle();
     
     // Check if window already exists
@@ -40,7 +40,7 @@ pub fn open_variables_window(window: Window) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn open_settings_window(window: Window) -> Result<(), String> {
+pub async fn open_settings_window(window: Window) -> Result<(), String> {
     let app_handle = window.app_handle();
     
     // Check if window already exists
@@ -120,7 +120,7 @@ pub fn set_window_theme(window: Window, theme: String) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn open_arena_window(window: Window) -> Result<(), String> {
+pub async fn open_arena_window(window: Window) -> Result<(), String> {
     let app_handle = window.app_handle();
     
     // Check if window already exists
@@ -154,7 +154,7 @@ pub fn open_arena_window(window: Window) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn open_arena_history_window(window: Window) -> Result<(), String> {
+pub async fn open_arena_history_window(window: Window) -> Result<(), String> {
     let app_handle = window.app_handle();
     
     // Check if window already exists
@@ -188,7 +188,7 @@ pub fn open_arena_history_window(window: Window) -> Result<(), String> {
 }
 
 #[tauri::command]
-pub fn open_arena_statistics_window(window: Window) -> Result<(), String> {
+pub async fn open_arena_statistics_window(window: Window) -> Result<(), String> {
     let app_handle = window.app_handle();
     
     // Check if window already exists
@@ -236,7 +236,7 @@ pub fn get_system_theme() -> Result<String, String> {
             let name_str: *const i8 = msg_send![name, UTF8String];
             let name_string = std::ffi::CStr::from_ptr(name_str).to_string_lossy();
             
-            println!("🔍 [Rust] System appearance name: {}", name_string);
+            println!("🔍 [Rust] macOS system appearance: {}", name_string);
             
             // Check if it's a dark appearance
             if name_string.contains("Dark") {
@@ -249,9 +249,83 @@ pub fn get_system_theme() -> Result<String, String> {
         }
     }
     
-    #[cfg(not(target_os = "macos"))]
+    #[cfg(target_os = "windows")]
     {
-        // On other platforms, default to light
+        use winreg::enums::*;
+        use winreg::RegKey;
+        
+        // Try to read Windows registry for theme preference
+        // HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Themes\Personalize
+        // AppsUseLightTheme: 0 = dark, 1 = light
+        
+        let hkcu = RegKey::predef(HKEY_CURRENT_USER);
+        match hkcu.open_subkey("Software\\Microsoft\\Windows\\CurrentVersion\\Themes\\Personalize") {
+            Ok(personalize) => {
+                match personalize.get_value::<u32, _>("AppsUseLightTheme") {
+                    Ok(value) => {
+                        let theme = if value == 0 { "dark" } else { "light" };
+                        println!("🔍 [Rust] Windows theme from registry: {} (value: {})", theme, value);
+                        Ok(theme.to_string())
+                    }
+                    Err(e) => {
+                        println!("⚠️ [Rust] Failed to read AppsUseLightTheme: {}", e);
+                        // Fallback to light theme
+                        Ok("light".to_string())
+                    }
+                }
+            }
+            Err(e) => {
+                println!("⚠️ [Rust] Failed to open registry key: {}", e);
+                // Fallback to light theme
+                Ok("light".to_string())
+            }
+        }
+    }
+    
+    #[cfg(target_os = "linux")]
+    {
+        // 1. Try to detect from GTK_THEME environment variable (existing logic)
+        if let Ok(gtk_theme) = std::env::var("GTK_THEME") {
+            if gtk_theme.to_lowercase().contains("dark") {
+                println!("🔍 [Rust] Linux GTK_THEME indicates dark mode");
+                return Ok("dark".to_string());
+            }
+        }
+
+        // 2. Try to detect from gsettings (for GNOME/Ubuntu)
+        use std::process::Command;
+        
+        // Check color-scheme (newer GNOME)
+        if let Ok(output) = Command::new("gsettings")
+            .args(&["get", "org.gnome.desktop.interface", "color-scheme"])
+            .output() 
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout).to_lowercase();
+            if stdout.contains("dark") {
+                 println!("🔍 [Rust] Linux gsettings color-scheme indicates dark mode");
+                 return Ok("dark".to_string());
+            }
+        }
+
+        // Check gtk-theme (older GNOME / fallback)
+        if let Ok(output) = Command::new("gsettings")
+            .args(&["get", "org.gnome.desktop.interface", "gtk-theme"])
+            .output() 
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout).to_lowercase();
+            if stdout.contains("dark") || stdout.contains("-dark") {
+                 println!("🔍 [Rust] Linux gsettings gtk-theme indicates dark mode");
+                 return Ok("dark".to_string());
+            }
+        }
+        
+        println!("ℹ️ [Rust] Linux: Unable to determine theme, defaulting to light");
+        Ok("light".to_string())
+    }
+    
+    #[cfg(not(any(target_os = "macos", target_os = "windows", target_os = "linux")))]
+    {
+        // For other platforms (BSD, etc.), default to light
         Ok("light".to_string())
     }
 }

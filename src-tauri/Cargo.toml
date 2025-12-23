@@ -35,6 +35,9 @@ git2 = { version = "0.18", features = ["vendored-libgit2", "vendored-openssl"] }
 cocoa = "0.24"
 objc = "0.2"
 
+[target.'cfg(target_os = "windows")'.dependencies]
+winreg = "0.52"
+
 [features]
 # this feature is used for production builds or when `devPath` points to the filesystem
 # DO NOT REMOVE!!
