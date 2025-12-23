@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../stores/editorStore";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
+import { useConsoleStore } from "../../stores/consoleStore";
 import { invoke } from "@tauri-apps/api/tauri";
 import { FileCode, History, X, Check } from "lucide-react";
 import MonacoEditor from "../editor/MonacoEditor";
@@ -9,7 +10,7 @@ import { useEffect, useRef, useState } from "react";
 // History save interval (5 minutes)
 const HISTORY_SAVE_INTERVAL = 5 * 60 * 1000;
 
-// Record last history save time for each file
+// Track last history save time for each file
 const lastHistorySaveTime: Record<string, number> = {};
 
 export default function Canvas() {
@@ -24,6 +25,7 @@ export default function Canvas() {
     clearHistoryPreview,
   } = useEditorStore();
   const { workspace } = useWorkspaceStore();
+  const { addLog } = useConsoleStore();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [applying, setApplying] = useState(false);
 
@@ -36,7 +38,6 @@ export default function Canvas() {
 
     // Check time interval: same file needs 5-minute interval
     if (now - lastSaveTime < HISTORY_SAVE_INTERVAL) {
-      console.log("Skipping history save: interval not reached");
       return;
     }
 
@@ -50,12 +51,10 @@ export default function Canvas() {
       if (saved) {
         // Only update timestamp if actually saved
         lastHistorySaveTime[filePath] = now;
-        console.log("File history saved");
-      } else {
-        console.log("History not saved: content unchanged");
+        addLog("INFO", `History saved: ${filePath}`);
       }
     } catch (error) {
-      console.error("Failed to save file history:", error);
+      addLog("WARNING", `History save failed: ${filePath} - ${error}`);
     }
   };
 
@@ -76,12 +75,12 @@ export default function Canvas() {
           content: content,
         });
         setDirty(false);
-        console.log("File auto-saved successfully");
+        addLog("SAVE", `File saved: ${currentFile}`);
 
         // Save file history
         await saveHistory(currentFile, content);
       } catch (error) {
-        console.error("Failed to auto-save file:", error);
+        addLog("ERROR", `Save failed: ${currentFile} - ${error}`);
       }
     }, 1000);
 
@@ -120,10 +119,13 @@ export default function Canvas() {
       setContent(newContent);
       setDirty(false);
 
+      const historyIdShort = historyPreview.historyId.substring(0, 8);
+      addLog("UPDATE", `History applied: ${currentFile} (version: ${historyIdShort})`);
+
       // Clear preview mode
       clearHistoryPreview();
     } catch (error) {
-      console.error("Failed to apply history:", error);
+      addLog("ERROR", `History apply failed: ${currentFile} - ${error}`);
       alert(t("history.apply_failed", "应用历史版本失败") + ": " + error);
     } finally {
       setApplying(false);
