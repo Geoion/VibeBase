@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { Trophy, ThumbsUp, DollarSign, Clock, Zap, BarChart3 } from "lucide-react";
-import { appWindow } from "@tauri-apps/api/window";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
+import WindowControls, { useWindowStyle } from "../ui/WindowControls";
 
 interface ArenaStatisticsWindowProps {
   onClose: () => void;
@@ -27,6 +27,7 @@ interface Statistics {
 export default function ArenaStatisticsWindow({ onClose, isStandaloneWindow = false }: ArenaStatisticsWindowProps) {
   const { t } = useTranslation();
   const { workspace } = useWorkspaceStore();
+  const { getWindowBorderRadius } = useWindowStyle();
   const [workspacePath, setWorkspacePath] = useState<string | null>(null);
   const [statistics, setStatistics] = useState<Statistics | null>(null);
   const [loading, setLoading] = useState(true);
@@ -66,22 +67,6 @@ export default function ArenaStatisticsWindow({ onClose, isStandaloneWindow = fa
     }
   };
 
-  const handleMinimize = async () => {
-    try {
-      await appWindow.minimize();
-    } catch (error) {
-      console.error("Failed to minimize:", error);
-    }
-  };
-
-  const handleMaximize = async () => {
-    try {
-      await appWindow.toggleMaximize();
-    } catch (error) {
-      console.error("Failed to maximize:", error);
-    }
-  };
-
   const sortedByVotes = statistics
     ? Object.entries(statistics.model_votes).sort((a, b) => b[1] - a[1])
     : [];
@@ -99,35 +84,10 @@ export default function ArenaStatisticsWindow({ onClose, isStandaloneWindow = fa
     : [];
 
   return (
-    <div className="w-full h-full bg-card flex flex-col">
+    <div className={`w-full h-full flex flex-col ${isStandaloneWindow ? `bg-card ${getWindowBorderRadius()} overflow-hidden` : "bg-card overflow-hidden"}`}>
       {/* Window Controls */}
       {isStandaloneWindow && (
-        <div
-          className="h-12 border-b border-border flex items-center justify-between px-6 bg-gradient-to-r from-card to-card/50"
-          data-tauri-drag-region
-        >
-          <div className="flex items-center gap-2" data-tauri-drag-region="none">
-            <button
-              onClick={onClose}
-              className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
-              title={t("actions.close")}
-            />
-            <button
-              onClick={handleMinimize}
-              className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors"
-              title={t("actions.minimize")}
-            />
-            <button
-              onClick={handleMaximize}
-              className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-colors"
-              title={t("actions.maximize")}
-            />
-          </div>
-          <h2 className="text-lg font-semibold flex-1 text-center" data-tauri-drag-region>
-            {t("statistics.title")}
-          </h2>
-          <div className="w-[68px]" />
-        </div>
+        <WindowControls title={t("statistics.title")} onClose={onClose} />
       )}
 
       {/* Main Content */}
