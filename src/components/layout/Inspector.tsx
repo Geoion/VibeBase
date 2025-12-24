@@ -1,6 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../stores/editorStore";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { useEffect, useState } from "react";
 import ExecutionPanel from "../execution/ExecutionPanel";
 import HistoryPanel from "../history/HistoryPanel";
