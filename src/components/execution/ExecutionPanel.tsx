@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { Loader2, AlertCircle, ChevronDown, Check, Trophy, X, Tag as TagIcon } from "lucide-react";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
 import { useEditorStore } from "../../stores/editorStore";
