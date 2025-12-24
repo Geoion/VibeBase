@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import "./styles/index.css";
 import "./i18n/config";
 import ArenaHistoryWindow from "./components/arena/ArenaHistoryWindow";
-import { appWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 type Theme = "light" | "dark" | "system";
 
@@ -93,19 +93,19 @@ function ArenaHistoryApp() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
-  const handleClose = () => {
-    appWindow.close();
+  const handleClose = async () => {
+    try {
+      const window = getCurrentWindow();
+      console.log("Closing arena history window from entry point...");
+      await window.close();
+      console.log("Arena history window closed successfully from entry point");
+    } catch (error) {
+      console.error("Failed to close arena history window from entry point:", error);
+    }
   };
 
-  // 检测操作系统以应用正确的圆角
-  const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().includes('MAC');
-  const borderRadius = isMac ? '10px' : '8px';
-
   return (
-    <div
-      className="w-full h-screen bg-transparent"
-      style={{ borderRadius, overflow: 'hidden' }}
-    >
+    <div className="w-full h-screen bg-transparent">
       <ArenaHistoryWindow onClose={handleClose} isStandaloneWindow={true} />
     </div>
   );
@@ -116,3 +116,4 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <ArenaHistoryApp />
   </React.StrictMode>
 );
+
