@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from "react";
 import ReactDOM from "react-dom/client";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import "./styles/index.css";
 import "./i18n/config";
 import SettingsPanel from "./components/settings/SettingsPanel";
-import { appWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow } from "@tauri-apps/api/window";
 
 type Theme = "light" | "dark" | "system";
 
@@ -102,19 +102,19 @@ function SettingsWindow() {
     return () => mediaQuery.removeEventListener("change", handleChange);
   }, [theme]);
 
-  const handleClose = () => {
-    appWindow.close();
+  const handleClose = async () => {
+    try {
+      const window = getCurrentWindow();
+      console.log("Closing settings window from entry point...");
+      await window.close();
+      console.log("Settings window closed successfully from entry point");
+    } catch (error) {
+      console.error("Failed to close settings window from entry point:", error);
+    }
   };
 
-  // 检测操作系统以应用正确的圆角
-  const isMac = typeof navigator !== 'undefined' && navigator.platform.toUpperCase().includes('MAC');
-  const borderRadius = isMac ? '10px' : '8px';
-
   return (
-    <div
-      className="w-full h-screen bg-transparent"
-      style={{ borderRadius, overflow: 'hidden' }}
-    >
+    <div className="w-full h-screen bg-transparent">
       <SettingsPanel onClose={handleClose} isStandaloneWindow={true} />
     </div>
   );
@@ -125,10 +125,3 @@ ReactDOM.createRoot(document.getElementById("root")!).render(
     <SettingsWindow />
   </React.StrictMode>
 );
-
-
-
-
-
-
-
