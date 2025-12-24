@@ -56,7 +56,8 @@
 
   html,
   body {
-    @apply bg-background text-foreground;
+    @apply text-foreground;
+    background-color: transparent;
     /* 禁用全局滚动 */
     overflow: hidden;
     height: 100%;
@@ -68,6 +69,7 @@
   }
 
   #root {
+    @apply bg-background;
     height: 100%;
     width: 100%;
     overflow: hidden;

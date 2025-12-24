@@ -3,7 +3,7 @@ import ReactDOM from "react-dom/client";
 import App from "./App";
 import "./i18n/config";
 import "./styles/index.css";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 
 // 🔥 Set window theme immediately before React mounts
 async function initializeApp() {
