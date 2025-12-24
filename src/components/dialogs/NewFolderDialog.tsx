@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, FolderPlus } from "lucide-react";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
 
 interface NewFolderDialogProps {
