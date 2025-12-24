@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { Play, Loader2, Check, Trophy } from "lucide-react";
 import PromptPreview from "./PromptPreview";
 import VoteCard from "./VoteCard";
-import { appWindow } from "@tauri-apps/api/window";
+import WindowControls, { useWindowStyle } from "../ui/WindowControls";
 
 interface ArenaWindowProps {
   onClose: () => void;
@@ -64,6 +64,7 @@ interface PromptRuntime {
 
 export default function ArenaWindow({ onClose, isStandaloneWindow = false }: ArenaWindowProps) {
   const { t } = useTranslation();
+  const { getWindowBorderRadius } = useWindowStyle();
 
   // Read passed data from localStorage
   const [variables, setVariables] = useState<string[]>([]);
@@ -141,22 +142,6 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
       setProviders(providersList);
     } catch (error) {
       console.error("Failed to load arena data:", error);
-    }
-  };
-
-  const handleMinimize = async () => {
-    try {
-      await appWindow.minimize();
-    } catch (error) {
-      console.error("Failed to minimize:", error);
-    }
-  };
-
-  const handleMaximize = async () => {
-    try {
-      await appWindow.toggleMaximize();
-    } catch (error) {
-      console.error("Failed to maximize:", error);
     }
   };
 
@@ -652,35 +637,10 @@ export default function ArenaWindow({ onClose, isStandaloneWindow = false }: Are
   };
 
   return (
-    <div className="w-full h-full bg-card flex flex-col">
+    <div className={`w-full h-full flex flex-col ${isStandaloneWindow ? `bg-card ${getWindowBorderRadius()} overflow-hidden` : "bg-card overflow-hidden"}`}>
       {/* Window Controls */}
       {isStandaloneWindow && (
-        <div
-          className="h-12 border-b border-border flex items-center justify-between px-6 bg-gradient-to-r from-card to-card/50"
-          data-tauri-drag-region
-        >
-          <div className="flex items-center gap-2" data-tauri-drag-region="none">
-            <button
-              onClick={onClose}
-              className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors"
-              title={t("actions.close")}
-            />
-            <button
-              onClick={handleMinimize}
-              className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors"
-              title={t("actions.minimize")}
-            />
-            <button
-              onClick={handleMaximize}
-              className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-colors"
-              title={t("actions.maximize")}
-            />
-          </div>
-          <h2 className="text-lg font-semibold flex-1 text-center" data-tauri-drag-region>
-            {t("arena.title")}
-          </h2>
-          <div className="w-[68px]" />
-        </div>
+        <WindowControls title={t("arena.title")} onClose={onClose} />
       )}
 
       {/* Prompt Preview */}
