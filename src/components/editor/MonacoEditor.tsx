@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import Editor, { Monaco } from "@monaco-editor/react";
 import { useThemeStore } from "../../stores/themeStore";
 import { editor, languages } from "monaco-editor";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 
 // Module-level flag to ensure completion provider is registered only once
 let completionProviderRegistered = false;
