@@ -5,6 +5,19 @@ All notable changes to VibeBase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.1] - 2025-12-24
+
+### Changed
+- **Internationalization Improvements**: Enhanced multi-language support for button hover tooltips across the interface
+  - All buttons in Variables Manager now use i18n translations for tooltips
+  - "Global Variables" and "Settings" button tooltips in the Header toolbar are now internationalized
+  - Inspector area placeholder text when no file is selected is now internationalized
+  - All translations synchronized across Simplified Chinese, Traditional Chinese, and English
+
+### Fixed
+- Fixed missing internationalization for hover tooltips on various UI elements
+- Improved consistency of multi-language user experience across the interface
+
 ## [0.2.0] - 2025-12-24
 
 ### 🚀 Major Update: Tauri 2.0 Migration
