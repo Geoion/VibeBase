@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { X, FileCode } from "lucide-react";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
 import { useEditorStore } from "../../stores/editorStore";
 import { useConsoleStore } from "../../stores/consoleStore";
