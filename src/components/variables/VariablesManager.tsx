@@ -1,8 +1,9 @@
 import { useState, useEffect } from "react";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { X, Plus, Trash2, HelpCircle, Search } from "lucide-react";
-import { appWindow } from "@tauri-apps/api/window";
+import { getCurrentWindow } from "@tauri-apps/api/window";
+import WindowControls, { useWindowStyle } from "../ui/WindowControls";
 
 interface GlobalVariable {
   id: string;
@@ -17,6 +18,7 @@ interface VariablesManagerProps {
 
 export default function VariablesManager({ onClose, isStandaloneWindow = false }: VariablesManagerProps) {
   const { t } = useTranslation();
+  const { getWindowBorderRadius } = useWindowStyle();
   const [variables, setVariables] = useState<GlobalVariable[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -97,21 +99,16 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
     }
   };
 
-  const handleMinimize = async () => {
-    if (isStandaloneWindow) {
-      await appWindow.minimize();
-    }
-  };
-
-  const handleMaximize = async () => {
-    if (isStandaloneWindow) {
-      await appWindow.toggleMaximize();
-    }
-  };
-
   const handleClose = async () => {
     if (isStandaloneWindow) {
-      await appWindow.close();
+      try {
+        const window = getCurrentWindow();
+        console.log("Closing variables window...");
+        await window.close();
+        console.log("Variables window closed successfully");
+      } catch (error) {
+        console.error("Failed to close variables window:", error);
+      }
     } else {
       onClose();
     }
@@ -133,39 +130,16 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
   return (
     <div className={isStandaloneWindow ? "w-full h-full" : "fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center p-4"}>
       <div
-        className={isStandaloneWindow ? "w-full h-full bg-background flex flex-col" : "w-full max-w-[800px] h-[700px] bg-card border border-border rounded-lg shadow-2xl flex flex-col"}
+        className={isStandaloneWindow ? `w-full h-full bg-card flex flex-col ${getWindowBorderRadius()} overflow-hidden` : "w-full max-w-[800px] h-[700px] bg-card border border-border rounded-lg shadow-2xl flex flex-col"}
       >
         {/* Header with window controls */}
-        <div
-          className={`h-12 border-b border-border flex items-center justify-between px-6 bg-gradient-to-r from-card to-card/50 ${isStandaloneWindow ? "" : "relative"}`}
-          data-tauri-drag-region={isStandaloneWindow}
-        >
-          {isStandaloneWindow && (
-            <div className="flex items-center gap-2" data-tauri-drag-region="none">
-              <button
-                onClick={handleClose}
-                className="w-3 h-3 rounded-full bg-red-500 hover:bg-red-600 transition-colors flex-shrink-0"
-                title={t("actions.close")}
-              />
-              <button
-                onClick={handleMinimize}
-                className="w-3 h-3 rounded-full bg-yellow-500 hover:bg-yellow-600 transition-colors flex-shrink-0"
-                title="最小化"
-              />
-              <button
-                onClick={handleMaximize}
-                className="w-3 h-3 rounded-full bg-green-500 hover:bg-green-600 transition-colors flex-shrink-0"
-                title="最大化"
-              />
-            </div>
-          )}
-          <h2
-            className={`text-lg font-semibold text-foreground ${isStandaloneWindow ? "flex-1 text-center" : ""}`}
-            data-tauri-drag-region={isStandaloneWindow}
-          >
-            {t("variables.manager")}
-          </h2>
-          {!isStandaloneWindow && (
+        {isStandaloneWindow ? (
+          <WindowControls title={t("variables.manager")} onClose={handleClose} />
+        ) : (
+          <div className="h-12 border-b border-border flex items-center justify-between px-6 bg-gradient-to-r from-card to-card/50 relative">
+            <h2 className="text-lg font-semibold text-foreground">
+              {t("variables.manager")}
+            </h2>
             <button
               onClick={handleClose}
               className="absolute right-4 p-1.5 hover:bg-accent rounded transition-colors"
@@ -173,9 +147,8 @@ export default function VariablesManager({ onClose, isStandaloneWindow = false }
             >
               <X className="w-5 h-5" />
             </button>
-          )}
-          {isStandaloneWindow && <div className="w-[68px]" data-tauri-drag-region="none" />} {/* Spacer for centering */}
-        </div>
+          </div>
+        )}
 
         {/* Content */}
         <div className="flex-1 overflow-auto p-6">
