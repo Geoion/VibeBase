@@ -2,10 +2,11 @@ import { useTranslation } from "react-i18next";
 import { useEditorStore } from "../../stores/editorStore";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
 import { useConsoleStore } from "../../stores/consoleStore";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { FileCode, History, X, Check } from "lucide-react";
 import MonacoEditor from "../editor/MonacoEditor";
 import { useEffect, useRef, useState } from "react";
+import { encodingForModel } from "js-tiktoken";
 
 // History save interval (5 minutes)
 const HISTORY_SAVE_INTERVAL = 5 * 60 * 1000;
@@ -28,6 +29,47 @@ export default function Canvas() {
   const { addLog } = useConsoleStore();
   const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const [applying, setApplying] = useState(false);
+  const [tokenCount, setTokenCount] = useState<number | null>(null);
+  const [isCalculating, setIsCalculating] = useState(false);
+  const debounceTokenRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Reset token count when file changes
+  useEffect(() => {
+    setTokenCount(null);
+    setIsCalculating(true);
+  }, [currentFile]);
+
+  // Token calculation effect
+  useEffect(() => {
+    // Only calculate for active file mode (not history) and if content exists
+    if (!currentFile || historyPreview) {
+      setTokenCount(null);
+      setIsCalculating(false);
+      return;
+    }
+
+    setIsCalculating(true);
+
+    if (debounceTokenRef.current) clearTimeout(debounceTokenRef.current);
+
+    debounceTokenRef.current = setTimeout(() => {
+      try {
+        // Use cl100k_base (gpt-4) for estimation
+        const enc = encodingForModel("gpt-4");
+        const tokens = enc.encode(content);
+        setTokenCount(tokens.length);
+      } catch (e) {
+        console.error("Token calculation failed", e);
+        setTokenCount(null);
+      } finally {
+        setIsCalculating(false);
+      }
+    }, 800); // 800ms debounce to avoid freezing
+
+    return () => {
+      if (debounceTokenRef.current) clearTimeout(debounceTokenRef.current);
+    };
+  }, [content, currentFile, historyPreview]);
 
   // Save file history (with time interval limit)
   const saveHistory = async (filePath: string, fileContent: string) => {
@@ -171,28 +213,41 @@ export default function Canvas() {
           )}
         </div>
 
-        {/* History preview mode action buttons */}
-        {isHistoryPreviewMode && (
-          <div className="flex items-center gap-2">
-            <button
-              onClick={clearHistoryPreview}
-              className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-colors"
-            >
-              <X className="w-3 h-3" />
-              {t("history.cancel_preview", "取消")}
-            </button>
-            <button
-              onClick={handleApplyHistory}
-              disabled={applying}
-              className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-primary rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-            >
-              <Check className="w-3 h-3" />
-              {applying
-                ? t("history.applying", "应用中...")
-                : t("history.apply_version", "应用此版本")}
-            </button>
-          </div>
-        )}
+        {/* Right side controls */}
+        <div className="flex items-center gap-2">
+          {/* Token Count */}
+          {currentFile && !isHistoryPreviewMode && (
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-secondary/50 rounded-md select-none" title="Estimated token count (gpt-4)">
+              <span className="text-xs text-muted-foreground">Tokens:</span>
+              <span className="text-xs text-muted-foreground font-mono">
+                {isCalculating || tokenCount === null ? "..." : tokenCount.toLocaleString()}
+              </span>
+            </div>
+          )}
+
+          {/* History preview mode action buttons */}
+          {isHistoryPreviewMode && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={clearHistoryPreview}
+                className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-colors"
+              >
+                <X className="w-3 h-3" />
+                {t("history.cancel_preview", "取消")}
+              </button>
+              <button
+                onClick={handleApplyHistory}
+                disabled={applying}
+                className="flex items-center gap-1 px-3 py-1 text-xs font-medium text-white bg-primary rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+              >
+                <Check className="w-3 h-3" />
+                {applying
+                  ? t("history.applying", "应用中...")
+                  : t("history.apply_version", "应用此版本")}
+              </button>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Editor Area */}
