@@ -57,12 +57,52 @@ jobs:
           VERSION: ${{ steps.get_version.outputs.VERSION }}
         with:
           script: |
+            const version = process.env.VERSION;
+            const body = `## Installation
+            
+            ### macOS
+            
+            Download the DMG file for your architecture:
+            - **Apple Silicon (M1/M2/M3)**: \`VibeBase_${version}_aarch64-apple-darwin.dmg\`
+            - **Intel**: \`VibeBase_${version}_x86_64-apple-darwin.dmg\`
+            
+            **Important**: After installation, remove the quarantine attribute:
+            \`\`\`bash
+            xattr -c /Applications/VibeBase.app
+            \`\`\`
+            
+            See \`MACOS_USAGE_*.txt\` files for detailed instructions.
+            
+            ### Windows
+            
+            Choose one of the installers:
+            - **MSI**: \`VibeBase_${version}_x86_64-pc-windows-msvc.msi\` - Traditional Windows Installer
+            - **NSIS**: \`VibeBase_${version}_x86_64-pc-windows-msvc.exe\` - Modern installation wizard
+            
+            ### Linux
+            
+            - **Debian/Ubuntu**: \`VibeBase_${version}_x86_64-unknown-linux-gnu.deb\`
+            - **Other distributions**: \`VibeBase_${version}_x86_64-unknown-linux-gnu.AppImage\`
+            
+            For AppImage, make it executable first:
+            \`\`\`bash
+            chmod +x VibeBase_*.AppImage
+            \`\`\`
+            
+            ## What's Changed
+            
+            See [CHANGELOG.md](https://github.com/${context.repo.owner}/${context.repo.repo}/blob/${version}/CHANGELOG.md) for details.
+            
+            ---
+            
+            **Full Changelog**: https://github.com/${context.repo.owner}/${context.repo.repo}/compare/v0.2.0...${version}`;
+            
             const { data } = await github.rest.repos.createRelease({
               owner: context.repo.owner,
               repo: context.repo.repo,
-              tag_name: process.env.VERSION,
-              name: `VibeBase ${process.env.VERSION}`,
-              body: 'See the assets below to download this version.',
+              tag_name: version,
+              name: `VibeBase ${version}`,
+              body: body,
               draft: true,
               prerelease: false
             })
@@ -157,6 +197,11 @@ jobs:
           releaseId: ${{ needs.create-release.outputs.release_id }}
           args: --target ${{ matrix.rust_target }}
 
+      - name: List build artifacts
+        run: |
+          echo "📦 Build artifacts for ${{ matrix.platform }} (${{ matrix.rust_target }}):"
+          ls -lah src-tauri/target/${{ matrix.rust_target }}/release/bundle/ || echo "Bundle directory not found"
+
       - name: Upload Windows MSI
         if: matrix.platform == 'windows-latest'
         uses: actions/upload-artifact@v4
@@ -174,7 +219,7 @@ jobs:
       - name: Create macOS Usage Instructions
         if: matrix.platform == 'macos-latest'
         run: |
-          cat > MACOS_USAGE.txt << 'EOF'
+          cat > MACOS_USAGE_${{ matrix.rust_target }}.txt << 'EOF'
           VibeBase for macOS - Installation Instructions
           
           Due to macOS Gatekeeper restrictions, you may see a warning when opening the app for the first time.
@@ -194,12 +239,12 @@ jobs:
           For more information, visit: https://github.com/Geoion/VibeBase
           EOF
 
-      - name: Upload macOS Usage Instructions
+      - name: Upload macOS Usage Instructions (Artifact)
         if: matrix.platform == 'macos-latest'
         uses: actions/upload-artifact@v4
         with:
           name: macOS-Usage-Instructions-${{ matrix.rust_target }}
-          path: MACOS_USAGE.txt
+          path: MACOS_USAGE_${{ matrix.rust_target }}.txt
 
       - name: Upload macOS DMG
         if: matrix.platform == 'macos-latest'
