@@ -3,7 +3,7 @@ import { useWorkspaceStore, Workspace, FileNode } from "../../stores/workspaceSt
 import { useEditorStore } from "../../stores/editorStore";
 import { useGitStore } from "../../stores/gitStore";
 import { useConsoleStore } from "../../stores/consoleStore";
-import { invoke } from "@tauri-apps/api/tauri";
+import { invoke } from "@tauri-apps/api/core";
 import { RefreshCw, FilePlus, FolderPlus, GitBranch } from "lucide-react";
 import { useState } from "react";
 import NewPromptDialog from "../dialogs/NewPromptDialog";
