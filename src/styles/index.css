@@ -69,12 +69,15 @@
   }
 
   #root {
-    /* For standalone windows, let the root be transparent to show rounded corners */
-    /* The actual background will be set on the inner container */
-    background-color: transparent;
+    @apply bg-background;
     height: 100%;
     width: 100%;
     overflow: hidden;
+  }
+
+  /* Transparent root for standalone windows (arena, settings, etc.) */
+  html.standalone-window #root {
+    background-color: transparent;
   }
 
   /* 禁用非输入框的文本选择 */

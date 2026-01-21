@@ -102,6 +102,7 @@ fn main() {
             apply_history,
             get_prompt_metadata,
             save_prompt_metadata,
+            get_all_tags,
             get_workspace_stats,
             initialize_workspace_db,
             clear_workspace_db,
