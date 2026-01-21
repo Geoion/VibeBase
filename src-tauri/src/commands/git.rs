@@ -85,14 +85,34 @@ pub async fn commit_changes(workspace_path: String, message: String) -> Result<S
 
 #[tauri::command]
 pub async fn pull_changes(workspace_path: String) -> Result<PullResult, String> {
+    println!("[GIT COMMAND] pull_changes called for workspace: {}", workspace_path);
     let service = GitService::new(&workspace_path);
-    service.pull().map_err(|e| e.to_string())
+    let result = service.pull();
+    match &result {
+        Ok(pull_result) => {
+            println!("[GIT COMMAND] pull_changes completed successfully: {}", pull_result.message);
+        },
+        Err(e) => {
+            println!("[GIT COMMAND] pull_changes failed: {}", e);
+        }
+    }
+    result.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
 pub async fn push_changes(workspace_path: String) -> Result<PushResult, String> {
+    println!("[GIT COMMAND] push_changes called for workspace: {}", workspace_path);
     let service = GitService::new(&workspace_path);
-    service.push().map_err(|e| e.to_string())
+    let result = service.push();
+    match &result {
+        Ok(push_result) => {
+            println!("[GIT COMMAND] push_changes completed successfully: {}", push_result.message);
+        },
+        Err(e) => {
+            println!("[GIT COMMAND] push_changes failed: {}", e);
+        }
+    }
+    result.map_err(|e| e.to_string())
 }
 
 #[tauri::command]
