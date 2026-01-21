@@ -116,18 +116,35 @@ pub async fn get_workspace_git_summary(workspace_path: String) -> Result<GitSumm
 #[tauri::command]
 pub async fn generate_commit_message(
     workspace_path: String,
-    _provider_name: Option<String>,
+    provider_name: Option<String>,
 ) -> Result<String, String> {
-    let service = GitService::new(&workspace_path);
-    let diff = service.get_diff().map_err(|e| e.to_string())?;
+    use crate::services::commit_message_generator::CommitMessageGenerator;
     
+    let service = GitService::new(&workspace_path);
+    
+    // Get diff
+    let diff = service.get_diff().map_err(|e| e.to_string())?;
     if diff.is_empty() {
         return Err("No changes to commit".to_string());
     }
     
-    // TODO: Integrate with LLM service to generate commit message
-    // For now, return a placeholder
-    let message = format!("chore: update files\n\nGenerated from {} lines of diff", diff.lines().count());
+    // Load git config to get preferences
+    let config = service.load_config().map_err(|e| e.to_string())?;
+    let style = config.commit_message_style.as_deref().unwrap_or("detailed");
+    let language = config.commit_message_language.as_deref().unwrap_or("auto");
+    let provider_ref = provider_name.as_deref()
+        .or(config.commit_message_provider.as_deref());
+    
+    // Generate commit message using LLM
+    let generator = CommitMessageGenerator::new();
+    
+    let message = generator.generate(
+        &diff,
+        style,
+        language,
+        provider_ref,
+    ).await.map_err(|e| e.to_string())?;
+    
     Ok(message)
 }
 

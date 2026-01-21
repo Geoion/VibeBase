@@ -69,7 +69,9 @@
   }
 
   #root {
-    @apply bg-background;
+    /* For standalone windows, let the root be transparent to show rounded corners */
+    /* The actual background will be set on the inner container */
+    background-color: transparent;
     height: 100%;
     width: 100%;
     overflow: hidden;
