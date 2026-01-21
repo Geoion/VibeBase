@@ -81,3 +81,15 @@ pub fn save_prompt_metadata(
     
     Ok(())
 }
+
+/// Get all unique tags from workspace
+#[tauri::command]
+pub fn get_all_tags(workspace_path: String) -> Result<Vec<String>, String> {
+    let workspace = Path::new(&workspace_path);
+    
+    let db = ProjectDatabase::new(workspace)
+        .map_err(|e| format!("Failed to open database: {}", e))?;
+    
+    db.get_all_tags()
+        .map_err(|e| format!("Failed to get tags: {}", e))
+}
