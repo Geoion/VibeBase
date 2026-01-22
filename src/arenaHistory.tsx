@@ -105,9 +105,7 @@ function ArenaHistoryApp() {
   };
 
   return (
-    <div className="w-full h-screen bg-transparent">
-      <ArenaHistoryWindow onClose={handleClose} isStandaloneWindow={true} />
-    </div>
+    <ArenaHistoryWindow onClose={handleClose} isStandaloneWindow={true} />
   );
 }
 
