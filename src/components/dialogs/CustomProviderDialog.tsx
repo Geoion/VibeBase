@@ -74,13 +74,13 @@ export default function CustomProviderDialog({
 
     // Check if conflicts with builtin provider IDs
     if (builtinProviderIds.some(id => id.toLowerCase() === lowerName)) {
-      setError(t("providers.customNameConflictsWithBuiltin", "名称与内置提供商冲突，请使用其他名称"));
+      setError(t("providers.customNameConflictsWithBuiltin"));
       return;
     }
 
     // Check if conflicts with builtin provider names
     if (builtinProviderNames.some(builtinName => builtinName.toLowerCase() === lowerName)) {
-      setError(t("providers.customNameConflictsWithBuiltin", "名称与内置提供商冲突，请使用其他名称"));
+      setError(t("providers.customNameConflictsWithBuiltin"));
       return;
     }
 
@@ -116,7 +116,7 @@ export default function CustomProviderDialog({
       <div className="bg-card border border-border rounded-lg shadow-lg w-full max-w-md mx-4">
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h3 className="text-lg font-semibold">
-            {editingProvider ? t("providers.editCustomProvider", "编辑自定义提供商") : t("providers.addCustomProvider")}
+            {editingProvider ? t("providers.editCustomProvider") : t("providers.addCustomProvider")}
           </h3>
           <button
             onClick={handleClose}
@@ -140,7 +140,7 @@ export default function CustomProviderDialog({
                 setName(e.target.value);
                 setError("");
               }}
-              placeholder="My Custom Provider"
+              placeholder={t("providers.customDisplayName")}
               className="w-full px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
             />
             <p className="mt-1 text-xs text-muted-foreground">
