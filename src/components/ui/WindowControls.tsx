@@ -70,16 +70,10 @@ export default function WindowControls({ title, onClose }: WindowControlsProps) 
     }
   };
 
-  // Get top border radius based on platform
-  const getTopBorderRadius = () => {
-    if (platform === "macos") return "rounded-t-xl";
-    if (platform === "linux") return "rounded-t-lg";
-    return ""; // Windows has no border radius
-  };
-
   return (
     <div
-      className={`h-12 border-b border-border flex items-center justify-between px-6 bg-gradient-to-r from-card to-card/50 ${getTopBorderRadius()}`}
+      className="h-12 border-b border-border flex items-center justify-between px-6 bg-gradient-to-r from-card to-card/50 rounded-t-xl"
+      style={{ borderTopLeftRadius: '12px', borderTopRightRadius: '12px' }}
     >
       {/* macOS style controls - left side */}
       {platform === "macos" && (
