@@ -1,9 +1,10 @@
 import { useState, useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
-import { Loader2, AlertCircle, ChevronDown, Check, Trophy, X, Tag as TagIcon } from "lucide-react";
+import { Loader2, AlertCircle, ChevronDown, Check, Trophy } from "lucide-react";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
 import { useEditorStore } from "../../stores/editorStore";
+import TagInput from "../ui/TagInput";
 
 interface ArenaSettings {
   concurrent_execution: boolean;
@@ -83,7 +84,6 @@ export default function ExecutionPanel({
 
   // Tags state
   const [tags, setTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState("");
   const [arenaSettings, setArenaSettings] = useState<ArenaSettings>({
     concurrent_execution: true,
     max_concurrent: 3,
@@ -207,7 +207,9 @@ export default function ExecutionPanel({
     }
   };
 
-  const saveTags = async (newTags: string[]) => {
+  const handleTagsChange = async (newTags: string[]) => {
+    setTags(newTags);
+    
     if (!workspace || !filePath) return;
 
     try {
@@ -222,20 +224,6 @@ export default function ExecutionPanel({
     } catch (error) {
       console.error("Failed to save tags:", error);
     }
-  };
-
-  const handleAddTag = () => {
-    if (!newTag.trim() || tags.includes(newTag.trim())) return;
-    const updatedTags = [...tags, newTag.trim()];
-    setTags(updatedTags);
-    setNewTag("");
-    saveTags(updatedTags);
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    const updatedTags = tags.filter(tag => tag !== tagToRemove);
-    setTags(updatedTags);
-    saveTags(updatedTags);
   };
 
   const toggleModelSelection = (modelName: string) => {
@@ -315,45 +303,11 @@ export default function ExecutionPanel({
       {/* Scrollable Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
         {/* Tags Section */}
-        <div>
-          <h3 className="text-sm font-semibold mb-2 flex items-center gap-2">
-            <TagIcon className="w-4 h-4" />
-            {t("metadata.tags")}
-          </h3>
-          <div className="flex flex-wrap gap-1.5 mb-2">
-            {tags.map((tag) => (
-              <span
-                key={tag}
-                className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-xs"
-              >
-                {tag}
-                <button
-                  onClick={() => handleRemoveTag(tag)}
-                  className="hover:bg-primary/20 rounded-sm p-0.5"
-                >
-                  <X className="w-3 h-3" />
-                </button>
-              </span>
-            ))}
-          </div>
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleAddTag()}
-              placeholder={t("metadata.add_tag_placeholder")}
-              className="flex-1 px-2 py-1.5 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
-            />
-            <button
-              onClick={handleAddTag}
-              disabled={!newTag.trim() || tags.includes(newTag.trim())}
-              className="px-3 py-1.5 text-sm font-medium bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {t("metadata.add_tag")}
-            </button>
-          </div>
-        </div>
+        <TagInput
+          workspacePath={workspace?.path}
+          tags={tags}
+          onTagsChange={handleTagsChange}
+        />
 
         {/* Variables Section */}
         {variables.length > 0 && (
