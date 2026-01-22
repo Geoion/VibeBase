@@ -236,7 +236,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
     // Ollama doesn't require API key
     if (!selectedProvider || (!apiKey && selectedProvider !== "ollama")) {
-      alert("Please enter an API Key first");
+      alert(t("dialogs.noApiKeyHint"));
       return;
     }
 
@@ -265,7 +265,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
       if (!fetchBaseUrl && selectedCustom) {
         console.error("[handleOpenModelDialog] Custom provider but no base_url!");
-        alert("Custom provider missing base URL");
+        alert(t("errors.noConfiguration"));
         setFetchingModels(false);
         return;
       }
@@ -296,7 +296,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
       setShowModelDialog(true);
     } catch (error) {
       console.error("Failed to fetch models:", error);
-      alert("Failed to fetch models: " + error);
+      alert(t("errors.saveFailed") + ": " + error);
     } finally {
       setFetchingModels(false);
     }
@@ -333,7 +333,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
 
   const handleDeleteModel = (modelId: string) => {
-    if (confirm(t("providers.deleteModelConfirm", "Delete this model?"))) {
+    if (confirm(t("providers.deleteModelConfirm"))) {
       setModels((prev) => prev.filter((m) => m.id !== modelId));
       setSaved(false);
     }
@@ -404,7 +404,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
     if (!selectedProvider || (!apiKey && selectedProvider !== "ollama")) {
       setTestResult({
         success: false,
-        message: t("providers.testNoApiKey", "请先输入 API Key")
+        message: t("providers.testNoApiKey")
       });
       setShowTestResult(true);
       return;
@@ -460,11 +460,11 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
 
     const existingProvider = providers.find(p => p.provider === selectedProvider);
     if (!existingProvider) {
-      alert("No configuration to delete");
+      alert(t("dialogs.noConfiguration"));
       return;
     }
 
-    if (!confirm(t("providers.deleteConfirm", "Delete this provider configuration?"))) {
+    if (!confirm(t("providers.deleteConfirm"))) {
       return;
     }
 
@@ -478,10 +478,9 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
       setProviderEnabled(false);
       setSavedEnabledModels([]);
       setModels([]);
-      alert("Provider configuration deleted");
     } catch (error) {
       console.error("Failed to delete provider:", error);
-      alert("Failed to delete provider: " + error);
+      alert(t("errors.deleteFailed") + ": " + error);
     }
   };
 
@@ -753,7 +752,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                       <button
                         onClick={handleEditCustomProvider}
                         className="p-2 hover:bg-accent rounded-md transition-colors"
-                        title={t("providers.editCustomProvider", "编辑自定义提供商")}
+                        title={t("providers.editCustomProvider")}
                       >
                         <Edit2 className="w-4 h-4 text-muted-foreground" />
                       </button>
@@ -774,7 +773,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                       onClick={handleToggleProviderEnabled}
                       className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${providerEnabled ? "bg-primary" : "bg-muted-foreground/20"
                         }`}
-                      title={providerEnabled ? "Disable provider" : "Enable provider"}
+                      title={providerEnabled ? t("llmProvider.disableProvider") : t("llmProvider.enableProvider")}
                     >
                       <span
                         className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${providerEnabled ? "translate-x-6" : "translate-x-0.5"
@@ -784,7 +783,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                     <button
                       onClick={handleDeleteProvider}
                       className="p-2 hover:bg-destructive/10 rounded-lg transition-colors"
-                      title="Delete configuration"
+                      title={t("llmProvider.deleteConfiguration")}
                     >
                       <Trash2 className="w-4 h-4 text-destructive" />
                     </button>
@@ -824,7 +823,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                     </div>
                     {!isCustomProvider && selectedBuiltinProvider && (
                       <p className="mt-1.5 text-xs text-muted-foreground">
-                        Get your API key from{" "}
+                        {t("llmProvider.getApiKeyFrom", { provider: selectedBuiltinProvider?.name })}{" "}
                         <a
                           href={`https://${selectedBuiltinProvider?.id === "openrouter" ? "openrouter.ai" : (selectedBuiltinProvider?.id || "example") + ".com"}`}
                           target="_blank"
@@ -843,13 +842,13 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                   <div className="space-y-3">
                     <div className="p-3 bg-blue-500/10 border border-blue-500/20 rounded-lg">
                       <p className="text-sm text-foreground">
-                        {t("providers.ollamaInfo", "Ollama 是本地 LLM 服务，不需要 API Key。请确保 Ollama 正在运行。")}
+                        {t("providers.ollamaInfo")}
                       </p>
                     </div>
 
                     <div>
                       <label className="block text-sm font-medium text-foreground mb-2">
-                        {t("providers.baseUrl", "Base URL")}
+                        {t("providers.baseUrl")}
                       </label>
                       <input
                         type="text"
@@ -862,7 +861,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                         className="w-full px-3 py-2 text-sm bg-background border border-input rounded-lg focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                       <p className="mt-1.5 text-xs text-muted-foreground">
-                        {t("providers.ollamaBaseUrlDesc", "Ollama 服务地址，支持局域网地址（如 http://192.168.1.100:11434）")}
+                        {t("providers.ollamaBaseUrlDesc")}
                       </p>
                     </div>
                   </div>
@@ -901,12 +900,12 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                       <div className="text-center py-8">
                         <p className="text-sm text-muted-foreground mb-2">
                           {modelSearchQuery
-                            ? t("providers.noModelsFound", "未找到匹配的模型")
-                            : "尚未选择模型"}
+                            ? t("providers.noModelsFound")
+                            : t("dialogs.noModelsSelected")}
                         </p>
                         {!modelSearchQuery && (
                           <p className="text-xs text-muted-foreground">
-                            点击上方 <strong>Fetch</strong> 按钮选择模型
+                            {t("dialogs.clickFetchHint")}
                           </p>
                         )}
                       </div>
@@ -915,8 +914,8 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                         <div className="flex items-center justify-between text-xs mb-3">
                           <span className="text-muted-foreground">
                             {modelSearchQuery
-                              ? `显示 ${filteredModels.length} / ${models.length} 个模型`
-                              : `已选择 ${models.length} 个模型`}
+                              ? t("dialogs.showingModels", { filtered: filteredModels.length, total: models.length })
+                              : t("dialogs.selectedModels", { count: models.length })}
                           </span>
                         </div>
                         {filteredModels.map((model) => (
@@ -934,7 +933,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                                 </span>
                                 {!providerEnabled && (
                                   <span className="px-1.5 py-0.5 text-xs bg-destructive/20 text-destructive rounded">
-                                    Provider Disabled
+                                    {t("dialogs.providerDisabled")}
                                   </span>
                                 )}
                               </div>
@@ -946,7 +945,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                               onClick={() => handleDeleteModel(model.id)}
                               disabled={!providerEnabled}
                               className="p-1.5 hover:bg-destructive/10 rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                              title="移除模型"
+                              title={t("dialogs.removeModel")}
                             >
                               <Trash2 className="w-4 h-4 text-muted-foreground hover:text-destructive" />
                             </button>
@@ -975,9 +974,9 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
             <div className="w-[700px] max-h-[80vh] bg-card border border-border rounded-lg shadow-xl flex flex-col">
               {/* Dialog Header */}
               <div className="px-6 py-4 border-b border-border">
-                <h3 className="text-lg font-semibold">{t("providers.selectModels", "选择模型")}</h3>
+                <h3 className="text-lg font-semibold">{t("providers.selectModels")}</h3>
                 <p className="text-sm text-muted-foreground mt-1">
-                  从 {availableModels.length} 个可用模型中选择
+                  {t("dialogs.modelsAvailable", { count: availableModels.length })}
                 </p>
               </div>
 
@@ -1001,8 +1000,8 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                   {filteredDialogModels.length === 0 ? (
                     <p className="text-sm text-muted-foreground text-center py-8">
                       {dialogSearchQuery
-                        ? t("providers.noModelsFound", "未找到匹配的模型")
-                        : "没有可用的模型"}
+                        ? t("providers.noModelsFound")
+                        : t("dialogs.noModelsAvailable")}
                     </p>
                   ) : (
                     filteredDialogModels.map((model) => {
@@ -1054,7 +1053,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
               {/* Dialog Footer */}
               <div className="px-6 py-4 border-t border-border flex items-center justify-between">
                 <p className="text-sm text-muted-foreground">
-                  已选择 {selectedModelsInDialog.size} 个模型
+                  {t("dialogs.selectedModels", { count: selectedModelsInDialog.size })}
                 </p>
                 <div className="flex gap-2">
                   <button
@@ -1071,7 +1070,7 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                     disabled={selectedModelsInDialog.size === 0}
                     className="px-4 py-2 text-sm font-medium text-white bg-primary rounded hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    {t("actions.confirm", "确认")}
+                    {t("actions.confirm")}
                   </button>
                 </div>
               </div>
@@ -1098,8 +1097,8 @@ export default function LLMProviderManager({ onSaveStatusChange }: LLMProviderMa
                 <div>
                   <h3 className="text-lg font-semibold">
                     {testResult.success
-                      ? t("providers.testSuccess", "连接成功")
-                      : t("providers.testFailed", "连接失败")}
+                      ? t("providers.testSuccess")
+                      : t("providers.testFailed")}
                   </h3>
                   <p className="text-sm text-muted-foreground">
                     {isCustomProvider ? selectedCustomProvider?.name : selectedBuiltinProvider?.name}
