@@ -28,7 +28,7 @@ export default function AutoSaveIndicator({ status }: AutoSaveIndicatorProps) {
           <Check className="w-4 h-4" />
         )}
         <span className="text-sm font-medium">
-          {status === "saving" ? t("settings.saving", "保存中...") : t("settings.autoSaved", "已自动保存")}
+          {status === "saving" ? t("settings.saving") : t("settings.autoSaved")}
         </span>
       </div>
     </div>
