@@ -105,9 +105,7 @@ function ArenaApp() {
   };
 
   return (
-    <div className="w-full h-screen bg-transparent">
-      <ArenaWindow onClose={handleClose} isStandaloneWindow={true} />
-    </div>
+    <ArenaWindow onClose={handleClose} isStandaloneWindow={true} />
   );
 }
 
