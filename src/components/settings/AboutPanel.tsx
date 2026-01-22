@@ -66,7 +66,7 @@ export default function AboutPanel() {
       await invoke("install_update");
       // Update will install and app will restart automatically
     } catch (err: any) {
-      setError(err.message || "Failed to install update");
+      setError(err.message || t("errors.saveFailed"));
       setIsInstalling(false);
     }
   };
@@ -133,13 +133,13 @@ export default function AboutPanel() {
                         className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                       >
                         <Download className="w-4 h-4" />
-                        <span>{isInstalling ? "Installing..." : "Install & Restart"}</span>
+                        <span>{isInstalling ? t("about.installing") : t("about.installAndRestart")}</span>
                       </button>
                       <button
                         onClick={() => handleOpenLink(updateInfo.download_url)}
                         className="flex items-center gap-2 px-4 py-2 text-sm text-blue-500 border border-blue-500 rounded-lg hover:bg-blue-500/10 transition-colors"
                       >
-                        <span>Manual Download</span>
+                        <span>{t("about.manualDownload")}</span>
                         <ExternalLink className="w-3 h-3" />
                       </button>
                     </div>
