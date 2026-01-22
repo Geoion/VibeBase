@@ -15,6 +15,10 @@ pub struct GitConfig {
     pub remote_url: Option<String>,
     pub is_configured: bool,
     pub last_fetch: Option<i64>,
+    // Commit message generation settings
+    pub commit_message_style: Option<String>,  // 'concise' | 'detailed'
+    pub commit_message_provider: Option<String>, // Provider reference for LLM
+    pub commit_message_language: Option<String>, // 'auto' | 'zh-CN' | 'en'
     pub created_at: i64,
     pub updated_at: i64,
 }
@@ -103,6 +107,9 @@ impl Default for GitConfig {
             remote_url: None,
             is_configured: false,
             last_fetch: None,
+            commit_message_style: Some("detailed".to_string()),
+            commit_message_provider: None,
+            commit_message_language: Some("auto".to_string()),
             created_at: now,
             updated_at: now,
         }
