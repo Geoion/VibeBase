@@ -5,7 +5,7 @@ import { Clock, Trophy } from "lucide-react";
 import VoteCard from "./VoteCard";
 import PromptPreview from "./PromptPreview";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
-import WindowControls, { useWindowStyle } from "../ui/WindowControls";
+import WindowControls from "../ui/WindowControls";
 
 interface ArenaHistoryWindowProps {
   onClose: () => void;

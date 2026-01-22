@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { invoke } from "@tauri-apps/api/core";
 import { Trophy, ThumbsUp, DollarSign, Clock, Zap, BarChart3 } from "lucide-react";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
-import WindowControls, { useWindowStyle } from "../ui/WindowControls";
+import WindowControls from "../ui/WindowControls";
 
 interface ArenaStatisticsWindowProps {
   onClose: () => void;

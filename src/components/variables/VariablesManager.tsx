@@ -3,7 +3,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
 import { X, Plus, Trash2, HelpCircle, Search } from "lucide-react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
-import WindowControls, { useWindowStyle } from "../ui/WindowControls";
+import WindowControls from "../ui/WindowControls";
 
 interface GlobalVariable {
   id: string;

@@ -4,7 +4,7 @@ import { invoke } from "@tauri-apps/api/core";
 import { Play, Loader2, Check, Trophy } from "lucide-react";
 import PromptPreview from "./PromptPreview";
 import VoteCard from "./VoteCard";
-import WindowControls, { useWindowStyle } from "../ui/WindowControls";
+import WindowControls from "../ui/WindowControls";
 
 interface ArenaWindowProps {
   onClose: () => void;
