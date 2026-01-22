@@ -100,9 +100,7 @@ function ArenaStatisticsApp() {
   };
 
   return (
-    <div className="w-full h-screen bg-transparent">
-      <ArenaStatisticsWindow onClose={handleClose} isStandaloneWindow={true} />
-    </div>
+    <ArenaStatisticsWindow onClose={handleClose} isStandaloneWindow={true} />
   );
 }
 
