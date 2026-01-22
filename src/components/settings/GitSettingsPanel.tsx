@@ -113,7 +113,7 @@ export default function GitSettingsPanel({ onSaveStatusChange }: GitSettingsPane
   if (loading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <p className="text-muted-foreground">Loading...</p>
+        <p className="text-muted-foreground">{t("providers.loading")}</p>
       </div>
     );
   }
@@ -131,7 +131,7 @@ export default function GitSettingsPanel({ onSaveStatusChange }: GitSettingsPane
               <div>
                 <h4 className="font-medium">{t("git.defaultModel")}</h4>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Select the LLM model to use for generating commit messages
+                  {t("about.selectModel")}
                 </p>
               </div>
             </div>
@@ -140,7 +140,7 @@ export default function GitSettingsPanel({ onSaveStatusChange }: GitSettingsPane
               onChange={(e) => handleModelChange(e.target.value)}
               className="px-3 py-2 bg-secondary rounded-lg border border-border text-sm min-w-[240px]"
             >
-              <option value="">Select a model...</option>
+              <option value="">{t("about.selectModel")}</option>
               {models.map((model) => (
                 <option key={model.id} value={model.id}>
                   {model.provider_name} - {model.model_name}
@@ -156,7 +156,7 @@ export default function GitSettingsPanel({ onSaveStatusChange }: GitSettingsPane
               <div>
                 <h4 className="font-medium">{t("git.generationStyle")}</h4>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Choose the format style for generated commit messages
+                  {t("about.chooseFormatStyle")}
                 </p>
               </div>
             </div>
@@ -178,7 +178,7 @@ export default function GitSettingsPanel({ onSaveStatusChange }: GitSettingsPane
               <div>
                 <h4 className="font-medium">{t("git.generationLanguage")}</h4>
                 <p className="text-sm text-muted-foreground mt-1">
-                  Language for generated commit messages (can be different from app language)
+                  {t("about.commitLanguageHint")}
                 </p>
               </div>
             </div>
@@ -188,9 +188,9 @@ export default function GitSettingsPanel({ onSaveStatusChange }: GitSettingsPane
               className="px-3 py-2 bg-secondary rounded-lg border border-border text-sm min-w-[240px]"
             >
               <option value="auto">{t("git.languageFollowApp")}</option>
-              <option value="zh-Hans">简体中文</option>
-              <option value="zh-Hant">繁體中文</option>
-              <option value="en-US">English</option>
+              <option value="zh-Hans">{t("language.zh-Hans")}</option>
+              <option value="zh-Hant">{t("language.zh-Hant")}</option>
+              <option value="en-US">{t("language.en-US")}</option>
             </select>
           </div>
 
@@ -222,14 +222,14 @@ export default function GitSettingsPanel({ onSaveStatusChange }: GitSettingsPane
 
       {/* Info Section */}
       <div>
-        <h3 className="text-lg font-semibold mb-4">💡 {t("settings.general.about")}</h3>
+        <h3 className="text-lg font-semibold mb-4">💡 {t("about.generalAbout")}</h3>
         <div className="bg-blue-500/10 border border-blue-500/20 rounded-lg p-4">
           <ul className="text-sm text-muted-foreground space-y-2">
-            <li>• When you click "AI Generate" in the commit dialog, it uses the model configured here</li>
-            <li>• The AI analyzes your git diff and generates an appropriate commit message</li>
-            <li>• You can edit the generated message before committing</li>
-            <li>• Make sure to configure your LLM providers in the Providers tab first</li>
-            <li>• You can choose a different language for commit messages than your app interface</li>
+            <li>• {t("about.gitSettingsInfo1")}</li>
+            <li>• {t("about.gitSettingsInfo2")}</li>
+            <li>• {t("about.gitSettingsInfo3")}</li>
+            <li>• {t("about.gitSettingsInfo4")}</li>
+            <li>• {t("about.gitSettingsInfo5")}</li>
           </ul>
         </div>
       </div>
