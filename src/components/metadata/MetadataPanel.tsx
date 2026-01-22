@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useTranslation } from "react-i18next";
-import { X } from "lucide-react";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
 import AutoSaveIndicator from "../ui/AutoSaveIndicator";
+import TagInput from "../ui/TagInput";
 
 interface PromptMetadata {
   id: string;
@@ -35,7 +35,6 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
   const [maxTokens, setMaxTokens] = useState("");
   const [testDataPath, setTestDataPath] = useState("");
   const [tags, setTags] = useState<string[]>([]);
-  const [newTag, setNewTag] = useState("");
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   // Store pending save data snapshot
   const pendingSaveDataRef = useRef<{
@@ -55,7 +54,6 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
 
   // Load data when component mounts and when filePath changes
   useEffect(() => {
-
     // Immediately disable saving (synchronous)
     canSaveRef.current = false;
     currentFilePathRef.current = filePath;
@@ -104,7 +102,8 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
     };
 
     saveAndLoad();
-  }, [filePath, workspace?.path]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filePath]);
 
   // Auto-save - when form data changes
   useEffect(() => {
@@ -218,7 +217,7 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
 
   const loadProviders = async () => {
     try {
-      const providerList = await invoke<any[]>("list_llm_providers");
+      const providerList = await invoke<Array<{ name: string }>>("list_llm_providers");
       setProviders(providerList.map((p) => p.name));
     } catch (error) {
       console.error("Failed to load providers:", error);
@@ -260,24 +259,6 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
     setTestDataPath(data.test_data_path || "");
   };
 
-  const handleAddTag = () => {
-    const trimmedTag = newTag.trim();
-    if (trimmedTag && !tags.includes(trimmedTag)) {
-      setTags([...tags, trimmedTag]);
-      setNewTag("");
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setTags(tags.filter((tag) => tag !== tagToRemove));
-  };
-
-  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      handleAddTag();
-    }
-  };
 
   if (loading) {
     return (
@@ -294,50 +275,12 @@ export default function MetadataPanel({ filePath }: MetadataPanelProps) {
       
       {/* Content */}
       <div className="flex-1 overflow-auto p-4 space-y-4">
-        {/* Tags */}
-        <div className="space-y-3">
-          <h4 className="text-xs font-semibold text-muted-foreground uppercase">
-            {t("metadata.tags")}
-          </h4>
-
-          {/* Tag input */}
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newTag}
-              onChange={(e) => setNewTag(e.target.value)}
-              onKeyDown={handleTagKeyDown}
-              className="flex-1 px-2 py-1.5 text-sm bg-background border border-input rounded focus:outline-none focus:ring-1 focus:ring-ring"
-              placeholder={t("metadata.add_tag_placeholder")}
-            />
-            <button
-              onClick={handleAddTag}
-              className="px-3 py-1.5 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90"
-            >
-              {t("metadata.add_tag")}
-            </button>
-          </div>
-
-          {/* Tags display */}
-          {tags.length > 0 && (
-            <div className="flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <span
-                  key={tag}
-                  className="inline-flex items-center gap-1 px-2 py-1 text-xs bg-accent text-accent-foreground rounded border border-border"
-                >
-                  {tag}
-                  <button
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hover:text-destructive"
-                  >
-                    <X className="w-3 h-3" />
-                  </button>
-                </span>
-              ))}
-            </div>
-          )}
-        </div>
+        {/* Tags with autocomplete */}
+        <TagInput
+          workspacePath={workspace?.path}
+          tags={tags}
+          onTagsChange={setTags}
+        />
 
         {/* LLM Configuration */}
         <div className="space-y-3">
