@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { X, FolderPlus } from "lucide-react";
 import { invoke } from "@tauri-apps/api/core";
 import { useWorkspaceStore } from "../../stores/workspaceStore";
@@ -14,6 +15,7 @@ export default function NewFolderDialog({
   onClose,
   onSuccess,
 }: NewFolderDialogProps) {
+  const { t } = useTranslation();
   const { workspace } = useWorkspaceStore();
   const [folderName, setFolderName] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -45,7 +47,7 @@ export default function NewFolderDialog({
 
     // Check if folder already exists
     if (checkFolderExists(folderName)) {
-      setError(`Folder already exists: ${folderName}`);
+      setError(`${t("errors.folderAlreadyExists")}: ${folderName}`);
       return;
     }
 
@@ -84,7 +86,7 @@ export default function NewFolderDialog({
           <div className="flex items-center gap-2">
             <FolderPlus className="w-4 h-4 text-primary" />
             <h2 className="text-lg font-semibold text-foreground">
-              New Folder
+              {t("dialogs.newFolder")}
             </h2>
           </div>
           <button
@@ -99,14 +101,14 @@ export default function NewFolderDialog({
         <div className="p-6 space-y-4">
           <div className="space-y-2">
             <label className="text-sm font-medium text-foreground">
-              Folder Name
+              {t("dialogs.folderName")}
             </label>
             <input
               type="text"
               value={folderName}
               onChange={(e) => setFolderName(e.target.value)}
               onKeyDown={handleKeyPress}
-              placeholder="e.g., prompts or customer-service"
+              placeholder={t("dialogs.folderNamePlaceholder")}
               className="w-full px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-ring"
               autoFocus
             />
@@ -114,7 +116,7 @@ export default function NewFolderDialog({
 
           <div className="p-3 bg-secondary rounded-md">
             <p className="text-xs text-muted-foreground">
-              <span className="font-medium">Location:</span> {parentPath}/
+              <span className="font-medium">{t("dialogs.location")}:</span> {parentPath}/
               <span className="text-foreground">{folderName || "..."}</span>
             </p>
           </div>
@@ -130,14 +132,14 @@ export default function NewFolderDialog({
               onClick={onClose}
               className="flex-1 px-4 py-2 text-sm border border-input rounded-md hover:bg-accent transition-colors"
             >
-              Cancel
+              {t("actions.cancel")}
             </button>
             <button
               onClick={handleCreate}
               disabled={!folderName || isCreating}
               className="flex-1 px-4 py-2 text-sm bg-primary text-primary-foreground rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
-              {isCreating ? "Creating..." : "Create Folder"}
+              {isCreating ? t("dialogs.creating") : t("dialogs.createFolder")}
             </button>
           </div>
         </div>
