@@ -53,7 +53,7 @@ export default function Inspector() {
             : "border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/30"
             } ${!currentFile ? "opacity-50 cursor-not-allowed" : ""}`}
         >
-          {t("inspector.metadata", "Metadata")}
+          {t("inspector.metadata")}
         </button>
         <button
           onClick={() => setActiveTab("history")}
@@ -63,7 +63,7 @@ export default function Inspector() {
             : "border-transparent text-muted-foreground hover:text-foreground hover:bg-accent/30"
             } ${!currentFile ? "opacity-50 cursor-not-allowed" : ""}`}
         >
-          {t("inspector.history", "History")}
+          {t("inspector.history")}
         </button>
       </div>
 
