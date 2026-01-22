@@ -168,7 +168,7 @@ export default function Canvas() {
       clearHistoryPreview();
     } catch (error) {
       addLog("ERROR", `History apply failed: ${currentFile} - ${error}`);
-      alert(t("history.apply_failed", "应用历史版本失败") + ": " + error);
+      alert(t("history.apply_failed") + ": " + error);
     } finally {
       setApplying(false);
     }
@@ -187,7 +187,7 @@ export default function Canvas() {
             <>
               <History className="w-4 h-4 text-amber-500" />
               <span className="text-sm font-medium text-foreground">
-                {t("history.preview_title", "历史版本")}
+                {t("history.preview_title")}
               </span>
               <span className="text-xs text-muted-foreground px-2 py-0.5 bg-amber-500/10 text-amber-600 rounded">
                 {historyPreview.historyId.substring(0, 8)}
@@ -203,7 +203,7 @@ export default function Canvas() {
                 {currentFile.split("/").pop()?.replace('.vibe.md', '')}
               </span>
               {isDirty && (
-                <span className="text-xs text-muted-foreground">● Auto-saving...</span>
+                <span className="text-xs text-muted-foreground">● {t("canvas.autoSaving")}</span>
               )}
             </>
           ) : (
@@ -217,10 +217,10 @@ export default function Canvas() {
         <div className="flex items-center gap-2">
           {/* Token Count */}
           {currentFile && !isHistoryPreviewMode && (
-            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-secondary/50 rounded-md select-none" title="Estimated token count (gpt-4)">
-              <span className="text-xs text-muted-foreground">Tokens:</span>
+            <div className="flex items-center gap-1.5 px-2 py-0.5 bg-secondary/50 rounded-md select-none" title={t("canvas.estimatedTokens")}>
+              <span className="text-xs text-muted-foreground">{t("canvas.tokens")}:</span>
               <span className="text-xs text-muted-foreground font-mono">
-                {isCalculating || tokenCount === null ? "..." : tokenCount.toLocaleString()}
+                {isCalculating || tokenCount === null ? t("canvas.calculating") : tokenCount.toLocaleString()}
               </span>
             </div>
           )}
@@ -233,7 +233,7 @@ export default function Canvas() {
                 className="flex items-center gap-1 px-2 py-1 text-xs text-muted-foreground hover:text-foreground hover:bg-accent rounded transition-colors"
               >
                 <X className="w-3 h-3" />
-                {t("history.cancel_preview", "取消")}
+                {t("history.cancel_preview")}
               </button>
               <button
                 onClick={handleApplyHistory}
@@ -242,8 +242,8 @@ export default function Canvas() {
               >
                 <Check className="w-3 h-3" />
                 {applying
-                  ? t("history.applying", "应用中...")
-                  : t("history.apply_version", "应用此版本")}
+                  ? t("history.applying")
+                  : t("history.apply_version")}
               </button>
             </div>
           )}
