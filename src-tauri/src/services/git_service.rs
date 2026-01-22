@@ -60,7 +60,9 @@ impl GitService {
         let config: Result<GitConfig, _> = conn.query_row(
             "SELECT id, repository_path, current_branch, auth_method, ssh_key_path, 
                     ssh_passphrase_key, github_token_key, git_user_name, git_user_email,
-                    remote_name, remote_url, is_configured, last_fetch, created_at, updated_at
+                    remote_name, remote_url, is_configured, last_fetch, 
+                    commit_message_style, commit_message_provider, commit_message_language,
+                    created_at, updated_at
              FROM git_config WHERE id = 'default'",
             [],
             |row| {
@@ -78,8 +80,11 @@ impl GitService {
                     remote_url: row.get(10)?,
                     is_configured: row.get::<_, i64>(11)? != 0,
                     last_fetch: row.get(12)?,
-                    created_at: row.get(13)?,
-                    updated_at: row.get(14)?,
+                    commit_message_style: row.get(13)?,
+                    commit_message_provider: row.get(14)?,
+                    commit_message_language: row.get(15)?,
+                    created_at: row.get(16)?,
+                    updated_at: row.get(17)?,
                 })
             },
         );
@@ -101,8 +106,10 @@ impl GitService {
             "INSERT OR REPLACE INTO git_config (
                 id, repository_path, current_branch, auth_method, ssh_key_path,
                 ssh_passphrase_key, github_token_key, git_user_name, git_user_email,
-                remote_name, remote_url, is_configured, last_fetch, created_at, updated_at
-            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15)",
+                remote_name, remote_url, is_configured, last_fetch,
+                commit_message_style, commit_message_provider, commit_message_language,
+                created_at, updated_at
+            ) VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9, ?10, ?11, ?12, ?13, ?14, ?15, ?16, ?17, ?18)",
             rusqlite::params![
                 &config.id,
                 &config.repository_path,
@@ -117,6 +124,9 @@ impl GitService {
                 &config.remote_url,
                 if config.is_configured { 1 } else { 0 },
                 &config.last_fetch,
+                &config.commit_message_style,
+                &config.commit_message_provider,
+                &config.commit_message_language,
                 &config.created_at,
                 now,
             ],
@@ -351,15 +361,27 @@ impl GitService {
 
     // Pull changes
     pub fn pull(&self) -> Result<PullResult> {
+        let start_time = Instant::now();
+        println!("[GIT PULL] Starting pull operation at {:?}", SystemTime::now());
+        
         let repo = self.init_repository()?;
+        println!("[GIT PULL] Repository initialized successfully");
+        
         let config = self.load_config()?;
+        let timeout_secs = self.get_operation_timeout();
+        println!("[GIT PULL] Loaded config, timeout set to {} seconds", timeout_secs);
         
         let remote_name = config.remote_name.as_deref().unwrap_or("origin");
+        println!("[GIT PULL] Using remote name: {}", remote_name);
         
         // Check if remote exists
         let remote = match repo.find_remote(remote_name) {
-            Ok(r) => r,
-            Err(_) => {
+            Ok(r) => {
+                println!("[GIT PULL] Remote '{}' found", remote_name);
+                r
+            },
+            Err(e) => {
+                println!("[GIT PULL] ERROR: Remote '{}' not found: {}", remote_name, e);
                 return Ok(PullResult {
                     success: false,
                     message: "Remote 'origin' not configured. Please add a remote first: git remote add origin <url>".to_string(),
@@ -371,6 +393,8 @@ impl GitService {
         
         // 对于 GitHub SSH URL，临时修改为使用 ssh.github.com:443 以绕过 ProxyCommand
         let original_url = remote.url().map(|s| s.to_string());
+        println!("[GIT PULL] Original remote URL: {:?}", original_url);
+        
         let needs_url_fix = if let Some(url) = &original_url {
             url.starts_with("git@github.com:")
         } else {
@@ -381,14 +405,21 @@ impl GitService {
             if let Some(url) = &original_url {
                 // 将 git@github.com:user/repo.git 转换为 ssh://git@ssh.github.com:443/user/repo.git
                 let new_url = url.replace("git@github.com:", "ssh://git@ssh.github.com:443/");
+                println!("[GIT PULL] Applying GitHub URL fix: {} -> {}", url, new_url);
                 repo.remote_set_url(remote_name, &new_url)?;
             }
+        } else {
+            println!("[GIT PULL] No URL fix needed");
         }
         
         // Get current branch
         let head = match repo.head() {
-            Ok(h) => h,
-            Err(_) => {
+            Ok(h) => {
+                println!("[GIT PULL] Repository HEAD found");
+                h
+            },
+            Err(e) => {
+                println!("[GIT PULL] ERROR: Cannot get repository HEAD: {}", e);
                 // 恢复原始 URL
                 if needs_url_fix {
                     if let Some(url) = &original_url {
@@ -405,31 +436,52 @@ impl GitService {
         };
         
         let branch_name = head.shorthand().unwrap_or("main");
+        println!("[GIT PULL] Current branch: {}", branch_name);
         
         // 重新获取 remote（因为 URL 已更改）
         let mut remote = repo.find_remote(remote_name)?;
         
+        println!("[GIT PULL] Setting up authentication callbacks...");
         let callbacks = self.get_remote_callbacks(&config)?;
         let mut fetch_options = FetchOptions::new();
         fetch_options.remote_callbacks(callbacks);
         
         // Fetch from remote
+        println!("[GIT PULL] Starting fetch from remote...");
+        let fetch_start = Instant::now();
         let fetch_result = remote.fetch(&[branch_name], Some(&mut fetch_options), None);
+        let fetch_duration = fetch_start.elapsed();
+        println!("[GIT PULL] Fetch completed in {:.2}s", fetch_duration.as_secs_f64());
         
         // 恢复原始 URL
         if needs_url_fix {
             if let Some(url) = &original_url {
+                println!("[GIT PULL] Restoring original URL: {}", url);
                 let _ = repo.remote_set_url(remote_name, url);
             }
         }
         
         // 检查 fetch 结果
+        match &fetch_result {
+            Ok(_) => println!("[GIT PULL] Fetch successful"),
+            Err(e) => {
+                println!("[GIT PULL] ERROR: Fetch failed: {}", e);
+                return Err(anyhow!("Fetch failed: {}", e));
+            }
+        }
         fetch_result?;
         
         // Get the upstream branch
+        println!("[GIT PULL] Looking for FETCH_HEAD...");
         let fetch_head = match repo.find_reference("FETCH_HEAD") {
-            Ok(r) => r,
-            Err(_) => {
+            Ok(r) => {
+                println!("[GIT PULL] FETCH_HEAD found");
+                r
+            },
+            Err(e) => {
+                println!("[GIT PULL] No FETCH_HEAD found: {}", e);
+                let total_duration = start_time.elapsed();
+                println!("[GIT PULL] Total operation time: {:.2}s", total_duration.as_secs_f64());
                 return Ok(PullResult {
                     success: true,
                     message: "Already up to date (no upstream branch)".to_string(),
@@ -439,10 +491,15 @@ impl GitService {
             }
         };
         
+        println!("[GIT PULL] Analyzing merge...");
         let fetch_commit = repo.reference_to_annotated_commit(&fetch_head)?;
         let analysis = repo.merge_analysis(&[&fetch_commit])?;
+        println!("[GIT PULL] Merge analysis complete: {:?}", analysis.0);
         
         if analysis.0.is_up_to_date() {
+            println!("[GIT PULL] Already up to date");
+            let total_duration = start_time.elapsed();
+            println!("[GIT PULL] Total operation time: {:.2}s", total_duration.as_secs_f64());
             return Ok(PullResult {
                 success: true,
                 message: "Already up to date".to_string(),
@@ -452,6 +509,7 @@ impl GitService {
         }
         
         if analysis.0.is_fast_forward() {
+            println!("[GIT PULL] Performing fast-forward merge...");
             // Fast-forward merge
             let refname = format!("refs/heads/{}", branch_name);
             let mut reference = repo.find_reference(&refname)?;
@@ -459,6 +517,9 @@ impl GitService {
             repo.set_head(&refname)?;
             repo.checkout_head(Some(git2::build::CheckoutBuilder::default().force()))?;
             
+            println!("[GIT PULL] Fast-forward successful");
+            let total_duration = start_time.elapsed();
+            println!("[GIT PULL] Total operation time: {:.2}s", total_duration.as_secs_f64());
             return Ok(PullResult {
                 success: true,
                 message: "Fast-forward successful".to_string(),
@@ -468,6 +529,9 @@ impl GitService {
         }
         
         // Normal merge (simplified - conflicts not fully handled)
+        println!("[GIT PULL] Normal merge required (not implemented)");
+        let total_duration = start_time.elapsed();
+        println!("[GIT PULL] Total operation time: {:.2}s", total_duration.as_secs_f64());
         Ok(PullResult {
             success: false,
             message: "Merge required - manual merge not yet implemented".to_string(),
@@ -478,15 +542,36 @@ impl GitService {
 
     // Push changes
     pub fn push(&self) -> Result<PushResult> {
+        let start_time = Instant::now();
+        println!("[GIT PUSH] Starting push operation at {:?}", SystemTime::now());
+        println!("[GIT PUSH] Workspace path: {}", self.workspace_path);
+        
+        // 记录当前的 SSH 环境变量
+        if let Ok(ssh_auth_sock) = env::var("SSH_AUTH_SOCK") {
+            println!("[GIT PUSH] SSH_AUTH_SOCK is set to: {}", ssh_auth_sock);
+        } else {
+            println!("[GIT PUSH] SSH_AUTH_SOCK is not set");
+        }
+        
         let repo = self.init_repository()?;
+        println!("[GIT PUSH] Repository initialized successfully");
+        
         let config = self.load_config()?;
+        let timeout_secs = self.get_operation_timeout();
+        println!("[GIT PUSH] Loaded config, timeout set to {} seconds", timeout_secs);
+        println!("[GIT PUSH] Auth method: {:?}", config.auth_method);
         
         let remote_name = config.remote_name.as_deref().unwrap_or("origin");
+        println!("[GIT PUSH] Using remote name: {}", remote_name);
         
         // Check if remote exists and get its URL
         let remote = match repo.find_remote(remote_name) {
-            Ok(r) => r,
-            Err(_) => {
+            Ok(r) => {
+                println!("[GIT PUSH] Remote '{}' found", remote_name);
+                r
+            },
+            Err(e) => {
+                println!("[GIT PUSH] ERROR: Remote '{}' not found: {}", remote_name, e);
                 return Ok(PushResult {
                     success: false,
                     message: "Remote 'origin' not configured. Please add a remote first: git remote add origin <url>".to_string(),
@@ -497,6 +582,8 @@ impl GitService {
         
         // 对于 GitHub SSH URL，临时修改为使用 ssh.github.com:443 以绕过 ProxyCommand
         let original_url = remote.url().map(|s| s.to_string());
+        println!("[GIT PUSH] Original remote URL: {:?}", original_url);
+        
         let needs_url_fix = if let Some(url) = &original_url {
             url.starts_with("git@github.com:")
         } else {
@@ -507,32 +594,65 @@ impl GitService {
             if let Some(url) = &original_url {
                 // 将 git@github.com:user/repo.git 转换为 ssh://git@ssh.github.com:443/user/repo.git
                 let new_url = url.replace("git@github.com:", "ssh://git@ssh.github.com:443/");
-                repo.remote_set_url(remote_name, &new_url)?;
+                println!("[GIT PUSH] Applying GitHub URL fix: {} -> {}", url, new_url);
+                match repo.remote_set_url(remote_name, &new_url) {
+                    Ok(_) => println!("[GIT PUSH] URL updated successfully"),
+                    Err(e) => println!("[GIT PUSH] ERROR: Failed to update URL: {}", e),
+                }
             }
+        } else {
+            println!("[GIT PUSH] No URL fix needed");
         }
         
         // 重新获取 remote（因为 URL 已更改）
-        let mut remote = repo.find_remote(remote_name)?;
+        let mut remote = match repo.find_remote(remote_name) {
+            Ok(r) => {
+                println!("[GIT PUSH] Remote re-acquired after URL update");
+                r
+            },
+            Err(e) => {
+                println!("[GIT PUSH] ERROR: Failed to re-acquire remote: {}", e);
+                // 恢复原始 URL
+                if needs_url_fix {
+                    if let Some(url) = &original_url {
+                        let _ = repo.remote_set_url(remote_name, url);
+                    }
+                }
+                return Err(anyhow!("Failed to re-acquire remote: {}", e));
+            }
+        };
         
+        println!("[GIT PUSH] Setting up authentication callbacks...");
         let callbacks = self.get_remote_callbacks(&config)?;
         let mut push_options = PushOptions::new();
         push_options.remote_callbacks(callbacks);
+        println!("[GIT PUSH] Callbacks configured");
         
         let head = repo.head()?;
         let branch_name = head.shorthand().unwrap_or("main");
         let refspec = format!("refs/heads/{}:refs/heads/{}", branch_name, branch_name);
+        println!("[GIT PUSH] Branch: {}, Refspec: {}", branch_name, refspec);
         
+        println!("[GIT PUSH] Initiating push to remote...");
+        let push_start = Instant::now();
         let result = remote.push(&[&refspec], Some(&mut push_options));
+        let push_duration = push_start.elapsed();
+        println!("[GIT PUSH] Push operation completed in {:.2}s", push_duration.as_secs_f64());
         
         // 恢复原始 URL
         if needs_url_fix {
             if let Some(url) = &original_url {
+                println!("[GIT PUSH] Restoring original URL: {}", url);
                 let _ = repo.remote_set_url(remote_name, url);
             }
         }
         
+        let total_duration = start_time.elapsed();
+        println!("[GIT PUSH] Total operation time: {:.2}s", total_duration.as_secs_f64());
+        
         match result {
             Ok(_) => {
+                println!("[GIT PUSH] SUCCESS: Push completed successfully");
                 Ok(PushResult {
                     success: true,
                     message: "Push successful".to_string(),
@@ -540,6 +660,8 @@ impl GitService {
                 })
             }
             Err(e) => {
+                println!("[GIT PUSH] ERROR: Push failed with error: {}", e);
+                println!("[GIT PUSH] Error details: {:?}", e);
                 Err(anyhow!("Push failed: {}", e))
             }
         }
@@ -635,59 +757,102 @@ impl GitService {
 
     // Get remote callbacks for authentication with timeout support
     fn get_remote_callbacks(&self, config: &GitConfig) -> Result<RemoteCallbacks<'_>> {
+        println!("[GIT CALLBACKS] Setting up remote callbacks");
         let mut callbacks = RemoteCallbacks::new();
         let config_clone = config.clone();
         
         // 设置 SSH_AUTH_SOCK 环境变量以使用 1Password SSH Agent
         if let Ok(sock_path) = env::var("SSH_AUTH_SOCK") {
+            println!("[GIT CALLBACKS] SSH_AUTH_SOCK already set: {}", sock_path);
             // SSH_AUTH_SOCK 已经设置，保持不变
             env::set_var("SSH_AUTH_SOCK", sock_path);
         } else {
+            println!("[GIT CALLBACKS] SSH_AUTH_SOCK not set, checking for 1Password SSH Agent...");
             // 尝试设置 1Password SSH Agent 路径
             if let Some(home) = dirs_next::home_dir() {
                 let onepassword_sock = home.join("Library/Group Containers/2BUA8C4S2C.com.1password/t/agent.sock");
                 if onepassword_sock.exists() {
+                    println!("[GIT CALLBACKS] Found 1Password SSH Agent at: {}", onepassword_sock.display());
                     env::set_var("SSH_AUTH_SOCK", onepassword_sock.to_string_lossy().to_string());
+                } else {
+                    println!("[GIT CALLBACKS] 1Password SSH Agent not found at: {}", onepassword_sock.display());
                 }
             }
         }
         
         // 从全局应用设置读取超时时间
         let timeout_secs = self.get_operation_timeout();
+        println!("[GIT CALLBACKS] Timeout configured: {} seconds", timeout_secs);
         let start_time = Arc::new(Mutex::new(Instant::now()));
         let start_time_clone = start_time.clone();
         
         // Accept all SSH certificates (simplified for now)
-        callbacks.certificate_check(|_cert, _host| {
+        callbacks.certificate_check(|_cert, host| {
+            println!("[GIT CALLBACKS] Certificate check for host: {:?}", host);
             Ok(git2::CertificateCheckStatus::CertificateOk)
         });
         
         // 添加进度回调以检查超时
-        callbacks.transfer_progress(move |_stats| {
+        callbacks.transfer_progress(move |stats| {
+            let received = stats.received_objects();
+            let total = stats.total_objects();
+            let bytes = stats.received_bytes();
+            
             if let Ok(start) = start_time_clone.lock() {
-                if start.elapsed().as_secs() > timeout_secs as u64 {
+                let elapsed = start.elapsed().as_secs();
+                
+                // 每 5 秒输出一次进度
+                if elapsed % 5 == 0 && elapsed > 0 {
+                    println!("[GIT CALLBACKS] Progress: {}/{} objects, {} bytes, {:.1}s elapsed", 
+                        received, total, bytes, elapsed as f64);
+                }
+                
+                if elapsed > timeout_secs as u64 {
+                    println!("[GIT CALLBACKS] TIMEOUT: Operation exceeded {} seconds, aborting", timeout_secs);
                     return false; // 返回 false 会中止操作
                 }
             }
             true
         });
         
-        callbacks.credentials(move |_url, username_from_url, _allowed_types| {
+        callbacks.credentials(move |url, username_from_url, allowed_types| {
+            println!("[GIT CALLBACKS] Credentials requested for URL: {}", url);
+            println!("[GIT CALLBACKS] Username from URL: {:?}", username_from_url);
+            println!("[GIT CALLBACKS] Allowed credential types: {:?}", allowed_types);
+            
             let username = username_from_url.unwrap_or("git");
+            println!("[GIT CALLBACKS] Using username: {}", username);
             
             // 首先尝试使用 SSH Agent（支持 1Password SSH Agent 等）
+            println!("[GIT CALLBACKS] Attempting SSH Agent authentication...");
             if let Ok(cred) = Cred::ssh_key_from_agent(username) {
+                println!("[GIT CALLBACKS] SUCCESS: SSH Agent authentication successful");
                 return Ok(cred);
+            } else {
+                println!("[GIT CALLBACKS] SSH Agent authentication failed, trying configured auth method");
             }
             
             // 如果 SSH Agent 失败，尝试配置的认证方法
             if let Some(auth_method) = &config_clone.auth_method {
+                println!("[GIT CALLBACKS] Configured auth method: {}", auth_method);
                 match auth_method.as_str() {
                     "ssh" => {
                         if let Some(ssh_key_path) = &config_clone.ssh_key_path {
+                            println!("[GIT CALLBACKS] Using SSH key from: {}", ssh_key_path);
+                            
                             let passphrase = if let Some(key) = &config_clone.ssh_passphrase_key {
-                                KeychainService::get_git_ssh_passphrase(key).ok()
+                                match KeychainService::get_git_ssh_passphrase(key) {
+                                    Ok(pass) => {
+                                        println!("[GIT CALLBACKS] SSH passphrase retrieved from keychain");
+                                        Some(pass)
+                                    },
+                                    Err(e) => {
+                                        println!("[GIT CALLBACKS] Failed to retrieve SSH passphrase: {}", e);
+                                        None
+                                    }
+                                }
                             } else {
+                                println!("[GIT CALLBACKS] No SSH passphrase configured");
                                 None
                             };
                             
@@ -702,29 +867,60 @@ impl GitService {
                                 Path::new(ssh_key_path).to_path_buf()
                             };
                             
-                            return Cred::ssh_key(
+                            println!("[GIT CALLBACKS] Expanded SSH key path: {}", expanded_path.display());
+                            
+                            let result = Cred::ssh_key(
                                 username,
                                 None,
                                 &expanded_path,
                                 passphrase.as_deref(),
                             );
+                            
+                            match &result {
+                                Ok(_) => println!("[GIT CALLBACKS] SSH key credential created successfully"),
+                                Err(e) => println!("[GIT CALLBACKS] Failed to create SSH key credential: {}", e),
+                            }
+                            
+                            return result;
+                        } else {
+                            println!("[GIT CALLBACKS] ERROR: SSH auth method selected but no key path configured");
                         }
                     }
                     "token" => {
                         if let Some(token_key) = &config_clone.github_token_key {
-                            if let Ok(token) = KeychainService::get_git_token(token_key) {
-                                return Cred::userpass_plaintext(&token, "");
+                            println!("[GIT CALLBACKS] Attempting token authentication...");
+                            match KeychainService::get_git_token(token_key) {
+                                Ok(token) => {
+                                    println!("[GIT CALLBACKS] Token retrieved from keychain, length: {}", token.len());
+                                    return Cred::userpass_plaintext(&token, "");
+                                },
+                                Err(e) => {
+                                    println!("[GIT CALLBACKS] Failed to retrieve token from keychain: {}", e);
+                                }
                             }
+                        } else {
+                            println!("[GIT CALLBACKS] ERROR: Token auth method selected but no token key configured");
                         }
                     }
-                    _ => {}
+                    _ => {
+                        println!("[GIT CALLBACKS] Unknown auth method: {}", auth_method);
+                    }
                 }
+            } else {
+                println!("[GIT CALLBACKS] No auth method configured");
             }
             
             // 最后尝试默认凭据
-            Cred::default()
+            println!("[GIT CALLBACKS] Falling back to default credentials");
+            let result = Cred::default();
+            match &result {
+                Ok(_) => println!("[GIT CALLBACKS] Default credentials created"),
+                Err(e) => println!("[GIT CALLBACKS] Failed to create default credentials: {}", e),
+            }
+            result
         });
         
+        println!("[GIT CALLBACKS] All callbacks configured successfully");
         Ok(callbacks)
     }
 
