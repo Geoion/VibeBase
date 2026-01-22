@@ -5,6 +5,53 @@ All notable changes to VibeBase will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.2] - 2026-01-23
+
+### Added
+- **Git Status Indicator**: Added real-time Git status indicator component showing repository state
+- **Git Commit Message Generator**: Integrated LLM-based commit message generation with configurable settings
+  - Support for custom prompt templates
+  - Automatic generation based on staged changes
+  - Configurable settings in Git configuration dialog
+- **Tag Management Enhancement**: Added `TagInput` component with autocomplete support
+  - Enhanced search with tag mode and tag suggestions
+  - Improved tag input UI across multiple components
+- **Dependency Updates**: 
+  - Updated `@tauri-apps/plugin-dialog` to v2.6.0
+  - Updated `cocoa` dependency to version 0.25 on macOS
+  - Updated various Rust dependencies in Cargo.lock
+
+### Changed
+- **Internationalization Improvements**: Completed i18n coverage for remaining components
+  - Added i18n support to `NewFolderDialog` and `NewPromptDialog` components
+  - Internationalized `GitConfigDialog` and `GitSettingsPanel` UI strings
+  - Internationalized `CustomProviderDialog` component
+  - Removed default translation fallback strings from `HistoryPanel` and Inspector tabs
+  - Replaced hardcoded alerts and UI strings with i18n translation keys in Navigator
+  - Updated Traditional Chinese, Simplified Chinese, and English locale translations
+- **Window Styling Refinements**:
+  - Refactored border radius logic in Arena windows (ArenaWindow, ArenaHistoryWindow, ArenaStatisticsWindow)
+  - Refactored window controls border radius styling
+  - Added `standalone-window` class to html tag for better window management
+  - Enhanced macOS window styling and effects
+- **Code Quality Improvements**:
+  - Removed unnecessary wrapper divs in Arena components (ArenaApp, ArenaHistoryApp, ArenaStatisticsApp)
+  - Refactored `VariablesManager` for improved i18n and UI consistency
+  - Refactored tag input components to use unified `TagInput` component
+
+### Fixed
+- **Git Operations**: Added detailed logging to Git pull and push operations for better debugging
+- **Database Schema**: Added `git_config` migration and `get_all_tags` method
+- **Configuration**: Added Cargo config to allow `unexpected_cfgs` lint
+- **Auto-configuration**: Auto-set Git workspace path on project open for better UX
+
+### Technical Details
+- Added `commit_message_generator` module to services
+- Added commit message generation settings to GitConfig
+- Enhanced database schema with `commit_message_settings` in `git_config` table
+- Added `get_all_tags` command to retrieve unique tags from database
+- Improved Git command logging for better troubleshooting
+
 ## [0.2.1] - 2025-12-24
 
 ### Changed
