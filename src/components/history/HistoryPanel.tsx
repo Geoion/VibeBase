@@ -77,19 +77,19 @@ export default function HistoryPanel({ filePath }: HistoryPanelProps) {
 
     // Less than 1 minute
     if (diff < 60000) {
-      return t("history.just_now", "刚刚");
+      return t("history.just_now");
     }
 
     // Less than 1 hour
     if (diff < 3600000) {
       const minutes = Math.floor(diff / 60000);
-      return t("history.minutes_ago", "{{count}} 分钟前", { count: minutes });
+      return t("history.minutes_ago", { count: minutes });
     }
 
     // Less than 24 hours
     if (diff < 86400000) {
       const hours = Math.floor(diff / 3600000);
-      return t("history.hours_ago", "{{count}} 小时前", { count: hours });
+      return t("history.hours_ago", { count: hours });
     }
 
     // Format as date
@@ -108,17 +108,17 @@ export default function HistoryPanel({ filePath }: HistoryPanelProps) {
         {loading ? (
           <div className="p-4">
             <p className="text-sm text-muted-foreground">
-              {t("history.loading", "加载历史中...")}
+              {t("history.loading")}
             </p>
           </div>
         ) : historyList.length === 0 ? (
           <div className="p-4 text-center">
             <Clock className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
             <p className="text-sm text-muted-foreground">
-              {t("history.no_history", "暂无历史记录")}
+              {t("history.no_history")}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              {t("history.no_history_desc", "编辑文件后会自动保存历史")}
+              {t("history.no_history_desc")}
             </p>
           </div>
         ) : (
@@ -148,7 +148,7 @@ export default function HistoryPanel({ filePath }: HistoryPanelProps) {
                     </span>
                   </div>
                   <div className="text-xs text-foreground line-clamp-3 leading-tight">
-                    {entry.preview || t("history.empty_content", "(空内容)")}
+                    {entry.preview || t("history.empty_content")}
                   </div>
                 </button>
               );
