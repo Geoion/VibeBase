@@ -4,7 +4,7 @@ import { useEditorStore } from "../../stores/editorStore";
 import { useGitStore } from "../../stores/gitStore";
 import { useConsoleStore } from "../../stores/consoleStore";
 import { invoke } from "@tauri-apps/api/core";
-import { RefreshCw, FilePlus, FolderPlus, GitBranch } from "lucide-react";
+import { RefreshCw, FilePlus, FolderPlus } from "lucide-react";
 import { useState } from "react";
 import NewPromptDialog from "../dialogs/NewPromptDialog";
 import NewFolderDialog from "../dialogs/NewFolderDialog";
@@ -14,6 +14,7 @@ import FileTreeNode from "../filetree/FileTreeNode";
 import ContextMenu from "../filetree/ContextMenu";
 import GitConfigDialog from "../git/GitConfigDialog";
 import GitPanel from "../git/GitPanel";
+import GitStatusIndicator from "../git/GitStatusIndicator";
 import { useDragDrop } from "../../hooks/useDragDrop";
 
 export default function Navigator() {
@@ -196,7 +197,7 @@ export default function Navigator() {
 
     // Prevent dragging folder to its own subfolder
     if (draggedNode.type === "folder" && targetNode.path.startsWith(draggedNode.path + '/')) {
-      alert('Cannot move folder into its own subfolder');
+      alert(t("navigator.cannotMoveToSubfolder"));
       return;
     }
 
@@ -208,7 +209,7 @@ export default function Navigator() {
     if (targetNode.type === "folder") {
       const hasConflict = targetNode.children.some(child => child.name === draggedNode.name);
       if (hasConflict) {
-        alert(`Already exists in target directory: ${draggedNode.name}`);
+        alert(`${t("navigator.alreadyExistsInTarget")}: ${draggedNode.name}`);
         return;
       }
     }
@@ -227,7 +228,7 @@ export default function Navigator() {
       }
     } catch (error) {
       console.error("Move failed:", error);
-      alert(`Move failed: ${error}`);
+      alert(`${t("navigator.moveFailed")}: ${error}`);
     }
   };
 
@@ -240,14 +241,14 @@ export default function Navigator() {
     // Check if already in root directory
     const sourceParent = draggedNode.path.substring(0, draggedNode.path.lastIndexOf('/'));
     if (sourceParent === workspace.path) {
-      console.log("Already in root directory, no need to move");
+      console.log(t("navigator.alreadyInRoot"));
       return;
     }
 
     // Check for name conflict in root
     const rootHasChild = workspace.file_tree.type === 'folder' && workspace.file_tree.children.some((child: FileNode) => child.name === draggedNode.name);
     if (rootHasChild) {
-      alert(`Already exists in root directory: ${draggedNode.name}`);
+      alert(`${t("navigator.alreadyExistsInTarget")}: ${draggedNode.name}`);
       return;
     }
 
@@ -265,7 +266,7 @@ export default function Navigator() {
       }
     } catch (error) {
       console.error("Move to root failed:", error);
-      alert(`Move failed: ${error}`);
+      alert(`${t("navigator.moveFailed")}: ${error}`);
     }
   };
 
@@ -364,14 +365,6 @@ export default function Navigator() {
           >
             <FolderPlus className="w-4 h-4 text-muted-foreground" />
           </button>
-          <button
-            onClick={handleGit}
-            className="p-1 hover:bg-accent rounded transition-colors"
-            title="Git"
-            disabled={!workspace}
-          >
-            <GitBranch className="w-4 h-4 text-muted-foreground" />
-          </button>
         </div>
         <div className="flex items-center gap-1">
           <button
@@ -383,6 +376,13 @@ export default function Navigator() {
           </button>
         </div>
       </div>
+
+      {/* Git Status Indicator */}
+      {workspace && (
+        <div className="border-b border-border px-2 py-1">
+          <GitStatusIndicator onGitClick={handleGit} />
+        </div>
+      )}
 
       {/* File Tree */}
       <div
@@ -437,7 +437,7 @@ export default function Navigator() {
             {isRootDropZone && isDragging && (
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="bg-primary/90 text-primary-foreground px-4 py-2 rounded-lg shadow-lg">
-                  Move to root directory
+                  {t("navigator.moveToRoot")}
                 </div>
               </div>
             )}
